@@ -55,17 +55,22 @@ function windowResized() {
 }
 
 function createWTUI(container) {
-  const row = document.createElement("div");
-  row.className = "controls controls-panel";
+  const panel = document.createElement("div");
+  panel.className = "controls controls-panel";
 
-  const baseLabel = document.createElement("label");
-  baseLabel.textContent = "Base pitch:";
-  row.appendChild(baseLabel);
+  const playbackRow = document.createElement("div");
+  playbackRow.className = "row";
+
+  const playbackLabel = document.createElement("span");
+  playbackLabel.className = "row-label";
+  playbackLabel.textContent = "Playback";
+  playbackRow.appendChild(playbackLabel);
 
   const baseGroup = document.createElement("span");
   baseGroup.className = "slider-group";
 
   const baseName = document.createElement("span");
+  baseName.className = "slider-label";
   baseName.textContent = "Base";
   baseGroup.appendChild(baseName);
 
@@ -75,12 +80,11 @@ function createWTUI(container) {
   baseFreqSlider.max = "880";
   baseFreqSlider.step = "1";
   baseFreqSlider.value = "110";
-  baseFreqSlider.style.marginLeft = "0.35rem";
   baseGroup.appendChild(baseFreqSlider);
 
   const baseVal = document.createElement("span");
+  baseVal.className = "slider-value";
   baseVal.textContent = "110 Hz";
-  baseVal.style.marginLeft = "0.35rem";
   baseGroup.appendChild(baseVal);
 
   baseFreqSlider.oninput = () => {
@@ -88,13 +92,27 @@ function createWTUI(container) {
     baseVal.textContent = `${Math.round(f)} Hz`;
     if (wtSource) wtSource.playbackRate.value = f / 110;
   };
-  row.appendChild(baseGroup);
+  playbackRow.appendChild(baseGroup);
+
+  wtPlayButton = document.createElement("button");
+  wtPlayButton.textContent = "Start";
+  wtPlayButton.onclick = toggleWTPlay;
+  playbackRow.appendChild(wtPlayButton);
+
+  const partialRow = document.createElement("div");
+  partialRow.className = "row";
+
+  const partialLabel = document.createElement("span");
+  partialLabel.className = "row-label";
+  partialLabel.textContent = "Partial amplitudes";
+  partialRow.appendChild(partialLabel);
 
   for (let i = 1; i <= 4; i++) {
     const group = document.createElement("span");
     group.className = "slider-group";
 
     const label = document.createElement("span");
+    label.className = "slider-label";
     label.textContent = `${i}x`;
     group.appendChild(label);
 
@@ -104,12 +122,11 @@ function createWTUI(container) {
     slider.max = "1";
     slider.step = "0.01";
     slider.value = i === 1 ? "1" : "0";
-    slider.style.marginLeft = "0.35rem";
     group.appendChild(slider);
 
     const valueSpan = document.createElement("span");
+    valueSpan.className = "slider-value";
     valueSpan.textContent = parseFloat(slider.value).toFixed(2);
-    valueSpan.style.marginLeft = "0.35rem";
     group.appendChild(valueSpan);
 
     slider.oninput = () => {
@@ -118,16 +135,12 @@ function createWTUI(container) {
     };
 
     partialSliders.push(slider);
-    row.appendChild(group);
+    partialRow.appendChild(group);
   }
 
-  wtPlayButton = document.createElement("button");
-  wtPlayButton.textContent = "Start";
-  wtPlayButton.style.marginLeft = "0.75rem";
-  wtPlayButton.onclick = toggleWTPlay;
-  row.appendChild(wtPlayButton);
-
-  container.appendChild(row);
+  panel.appendChild(playbackRow);
+  panel.appendChild(partialRow);
+  container.appendChild(panel);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

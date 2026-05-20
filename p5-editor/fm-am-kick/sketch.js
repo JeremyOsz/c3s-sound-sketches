@@ -60,11 +60,13 @@ const KICK_PATTERNS = [
   { id: "two_step", name: "2-step (UK-ish)", steps: [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1] },
 ];
 
+// Pattern helpers keep the 16-step clock code separate from the audio engine.
 function getPatternById(id) {
   const found = KICK_PATTERNS.find((p) => p.id === id);
   return found ? found.steps.slice() : KICK_PATTERNS[0].steps.slice();
 }
 
+// The "perlin" carrier is a looped table, so it exposes the same start/stop/freq/amp API as p5 oscillators.
 function createPerlinTableBuffer(ctx, tableLen) {
   const buffer = ctx.createBuffer(1, tableLen, ctx.sampleRate);
   const data = buffer.getChannelData(0);
@@ -228,27 +230,85 @@ function windowResized() {
 }
 
 function createKickUI(container) {
-  const row = document.createElement("div");
-  row.className = "controls controls-panel";
+  const panel = document.createElement("div");
+  panel.className = "controls controls-panel";
+
+  // Small DOM helpers keep the repeated control shape readable without creating a shared dependency.
+  const createRow = (labelText) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    const label = document.createElement("span");
+    label.className = "row-label";
+    label.textContent = labelText;
+    row.appendChild(label);
+    panel.appendChild(row);
+    return row;
+  };
+
+  const controlPair = (labelText, control) => {
+    const pair = document.createElement("div");
+    pair.className = "control-pair";
+    const label = document.createElement("label");
+    label.textContent = labelText;
+    pair.appendChild(label);
+    pair.appendChild(control);
+    return pair;
+  };
+
+  const togglePair = (labelText, input) => {
+    const label = document.createElement("label");
+    label.className = "toggle";
+    label.htmlFor = input.id;
+    label.appendChild(input);
+    const text = document.createElement("span");
+    text.textContent = labelText;
+    label.appendChild(text);
+    return label;
+  };
+
+  const sliderGroup = (labelText, minV, maxV, stepV, defaultV, valueText, onInput) => {
+    const group = document.createElement("span");
+    group.className = "slider-group";
+
+    const label = document.createElement("span");
+    label.className = "slider-label";
+    label.textContent = labelText;
+    group.appendChild(label);
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = String(minV);
+    slider.max = String(maxV);
+    slider.step = String(stepV);
+    slider.value = String(defaultV);
+    group.appendChild(slider);
+
+    const value = document.createElement("span");
+    value.className = "slider-value";
+    value.textContent = valueText(defaultV);
+    group.appendChild(value);
+
+    slider.oninput = () => {
+      value.textContent = valueText(parseFloat(slider.value));
+      if (onInput) onInput(slider, value);
+    };
+
+    return { group, slider, value };
+  };
+
+  const transportRow = createRow("Transport and clock");
 
   runButton = document.createElement("button");
   runButton.textContent = "Start audio";
   runButton.onclick = toggleEngine;
-  row.appendChild(runButton);
+  transportRow.appendChild(runButton);
 
   triggerButton = document.createElement("button");
   triggerButton.textContent = "Trigger kick";
-  triggerButton.style.marginLeft = "0.5rem";
   triggerButton.onclick = triggerKick;
-  row.appendChild(triggerButton);
-
-  const carrierLabel = document.createElement("label");
-  carrierLabel.textContent = "Carrier";
-  carrierLabel.style.marginLeft = "0.75rem";
-  row.appendChild(carrierLabel);
+  transportRow.appendChild(triggerButton);
 
   carrierSelect = document.createElement("select");
-  carrierSelect.style.marginLeft = "0.35rem";
   carrierSelect.title = "Carrier source / waveform";
   const carrierOptions = [
     { id: "sine", label: "sine (pure)" },
@@ -272,22 +332,14 @@ function createKickUI(container) {
     carrier = createCarrier(next);
     if (wasRunning) carrier.start();
   };
-  row.appendChild(carrierSelect);
+  transportRow.appendChild(controlPair("Carrier", carrierSelect));
 
   patternCheckbox = document.createElement("input");
   patternCheckbox.type = "checkbox";
   patternCheckbox.id = "kick-pattern";
-  patternCheckbox.style.marginLeft = "0.75rem";
-  row.appendChild(patternCheckbox);
-
-  const patternLabel = document.createElement("label");
-  patternLabel.htmlFor = "kick-pattern";
-  patternLabel.textContent = "pattern";
-  patternLabel.style.marginLeft = "0.25rem";
-  row.appendChild(patternLabel);
+  transportRow.appendChild(togglePair("Pattern", patternCheckbox));
 
   patternSelect = document.createElement("select");
-  patternSelect.style.marginLeft = "0.4rem";
   patternSelect.title = "Choose a common kick pattern (16-step grid)";
   for (const p of KICK_PATTERNS) {
     const o = document.createElement("option");
@@ -301,223 +353,40 @@ function createKickUI(container) {
     patternStartTime = millis() / 1000;
     lastPatternStep = -1;
   };
-  row.appendChild(patternSelect);
+  transportRow.appendChild(controlPair("Pattern", patternSelect));
 
-  const bpmGroup = document.createElement("span");
-  bpmGroup.className = "slider-group";
-  const bpmName = document.createElement("span");
-  bpmName.textContent = "BPM";
-  bpmGroup.appendChild(bpmName);
-
-  bpmSlider = document.createElement("input");
-  bpmSlider.type = "range";
-  bpmSlider.min = "60";
-  bpmSlider.max = "180";
-  bpmSlider.step = "1";
-  bpmSlider.value = "130";
-  bpmSlider.style.marginLeft = "0.35rem";
-  bpmGroup.appendChild(bpmSlider);
-
-  const bpmVal = document.createElement("span");
-  bpmVal.textContent = "130";
-  bpmVal.style.marginLeft = "0.35rem";
-  bpmGroup.appendChild(bpmVal);
-  bpmSlider.oninput = () => {
-    bpmVal.textContent = `${Math.round(parseFloat(bpmSlider.value))}`;
-  };
-  row.appendChild(bpmGroup);
+  ({ slider: bpmSlider } = sliderGroup("BPM", 60, 180, 1, 130, (v) => `${Math.round(v)}`));
+  transportRow.appendChild(bpmSlider.parentElement);
 
   autoTriggerCheckbox = document.createElement("input");
   autoTriggerCheckbox.type = "checkbox";
   autoTriggerCheckbox.id = "kick-auto";
-  autoTriggerCheckbox.style.marginLeft = "0.75rem";
-  row.appendChild(autoTriggerCheckbox);
+  transportRow.appendChild(togglePair("Auto trigger", autoTriggerCheckbox));
 
-  const autoLabel = document.createElement("label");
-  autoLabel.htmlFor = "kick-auto";
-  autoLabel.textContent = "auto trigger";
-  autoLabel.style.marginLeft = "0.25rem";
-  row.appendChild(autoLabel);
+  ({ slider: autoRateSlider } = sliderGroup("Auto rate", 0.5, 8, 0.1, 2.0, (v) => `${v.toFixed(1)} Hz`));
+  transportRow.appendChild(autoRateSlider.parentElement);
 
-  const autoGroup = document.createElement("span");
-  autoGroup.className = "slider-group";
-  const autoName = document.createElement("span");
-  autoName.textContent = "Auto";
-  autoGroup.appendChild(autoName);
+  const pitchRow = createRow("Pitch envelope");
+  ({ slider: baseFreqSlider } = sliderGroup("Base", 30, 90, 1, 48, (v) => `${Math.round(v)} Hz`));
+  pitchRow.appendChild(baseFreqSlider.parentElement);
+  ({ slider: pitchDropSlider } = sliderGroup("Drop", 0, 36, 1, 24, (v) => `${Math.round(v)} st`));
+  pitchRow.appendChild(pitchDropSlider.parentElement);
+  ({ slider: pitchDecaySlider } = sliderGroup("Pitch decay", 20, 600, 5, 130, (v) => `${Math.round(v)} ms`));
+  pitchRow.appendChild(pitchDecaySlider.parentElement);
 
-  autoRateSlider = document.createElement("input");
-  autoRateSlider.type = "range";
-  autoRateSlider.min = "0.5";
-  autoRateSlider.max = "8";
-  autoRateSlider.step = "0.1";
-  autoRateSlider.value = "2.0";
-  autoRateSlider.style.marginLeft = "0.35rem";
-  autoGroup.appendChild(autoRateSlider);
+  const ampRow = createRow("Amplitude envelope");
+  ({ slider: ampDecaySlider } = sliderGroup("Decay", 120, 1800, 10, 900, (v) => `${Math.round(v)} ms`));
+  ampRow.appendChild(ampDecaySlider.parentElement);
 
-  const autoVal = document.createElement("span");
-  autoVal.textContent = "2.0 Hz";
-  autoVal.style.marginLeft = "0.35rem";
-  autoGroup.appendChild(autoVal);
-  autoRateSlider.oninput = () => {
-    autoVal.textContent = `${parseFloat(autoRateSlider.value).toFixed(1)} Hz`;
-  };
-  row.appendChild(autoGroup);
+  const fmRow = createRow("FM / AM shaping");
+  ({ slider: fmRatioSlider } = sliderGroup("FM ratio", 0.5, 5, 0.1, 1.2, (v) => v.toFixed(1)));
+  fmRow.appendChild(fmRatioSlider.parentElement);
+  ({ slider: fmAmountSlider } = sliderGroup("FM amount", 0, 240, 5, 100, (v) => `${Math.round(v)} Hz`));
+  fmRow.appendChild(fmAmountSlider.parentElement);
+  ({ slider: fmDecaySlider } = sliderGroup("FM decay", 10, 450, 5, 90, (v) => `${Math.round(v)} ms`));
+  fmRow.appendChild(fmDecaySlider.parentElement);
 
-  const baseGroup = document.createElement("span");
-  baseGroup.className = "slider-group";
-  const baseName = document.createElement("span");
-  baseName.textContent = "Base";
-  baseGroup.appendChild(baseName);
-  baseFreqSlider = document.createElement("input");
-  baseFreqSlider.type = "range";
-  baseFreqSlider.min = "30";
-  baseFreqSlider.max = "90";
-  baseFreqSlider.step = "1";
-  baseFreqSlider.value = "48";
-  baseFreqSlider.style.marginLeft = "0.35rem";
-  baseGroup.appendChild(baseFreqSlider);
-  const baseVal = document.createElement("span");
-  baseVal.textContent = "48 Hz";
-  baseVal.style.marginLeft = "0.35rem";
-  baseGroup.appendChild(baseVal);
-  baseFreqSlider.oninput = () => {
-    baseVal.textContent = `${Math.round(parseFloat(baseFreqSlider.value))} Hz`;
-  };
-  row.appendChild(baseGroup);
-
-  const dropGroup = document.createElement("span");
-  dropGroup.className = "slider-group";
-  const dropName = document.createElement("span");
-  dropName.textContent = "Drop";
-  dropGroup.appendChild(dropName);
-  pitchDropSlider = document.createElement("input");
-  pitchDropSlider.type = "range";
-  pitchDropSlider.min = "0";
-  pitchDropSlider.max = "36";
-  pitchDropSlider.step = "1";
-  pitchDropSlider.value = "24";
-  pitchDropSlider.style.marginLeft = "0.35rem";
-  dropGroup.appendChild(pitchDropSlider);
-  const dropVal = document.createElement("span");
-  dropVal.textContent = "24 st";
-  dropVal.style.marginLeft = "0.35rem";
-  dropGroup.appendChild(dropVal);
-  pitchDropSlider.oninput = () => {
-    dropVal.textContent = `${Math.round(parseFloat(pitchDropSlider.value))} st`;
-  };
-  row.appendChild(dropGroup);
-
-  const pDecayGroup = document.createElement("span");
-  pDecayGroup.className = "slider-group";
-  const pDecayName = document.createElement("span");
-  pDecayName.textContent = "Pitch decay";
-  pDecayGroup.appendChild(pDecayName);
-  pitchDecaySlider = document.createElement("input");
-  pitchDecaySlider.type = "range";
-  pitchDecaySlider.min = "20";
-  pitchDecaySlider.max = "600";
-  pitchDecaySlider.step = "5";
-  pitchDecaySlider.value = "130";
-  pitchDecaySlider.style.marginLeft = "0.35rem";
-  pDecayGroup.appendChild(pitchDecaySlider);
-  const pDecayVal = document.createElement("span");
-  pDecayVal.textContent = "130 ms";
-  pDecayVal.style.marginLeft = "0.35rem";
-  pDecayGroup.appendChild(pDecayVal);
-  pitchDecaySlider.oninput = () => {
-    pDecayVal.textContent = `${Math.round(parseFloat(pitchDecaySlider.value))} ms`;
-  };
-  row.appendChild(pDecayGroup);
-
-  const aDecayGroup = document.createElement("span");
-  aDecayGroup.className = "slider-group";
-  const aDecayName = document.createElement("span");
-  aDecayName.textContent = "Amplitude decay";
-  aDecayGroup.appendChild(aDecayName);
-  ampDecaySlider = document.createElement("input");
-  ampDecaySlider.type = "range";
-  ampDecaySlider.min = "120";
-  ampDecaySlider.max = "1800";
-  ampDecaySlider.step = "10";
-  ampDecaySlider.value = "900";
-  ampDecaySlider.style.marginLeft = "0.35rem";
-  aDecayGroup.appendChild(ampDecaySlider);
-  const aDecayVal = document.createElement("span");
-  aDecayVal.textContent = "900 ms";
-  aDecayVal.style.marginLeft = "0.35rem";
-  aDecayGroup.appendChild(aDecayVal);
-  ampDecaySlider.oninput = () => {
-    aDecayVal.textContent = `${Math.round(parseFloat(ampDecaySlider.value))} ms`;
-  };
-  row.appendChild(aDecayGroup);
-
-  const fmRatioGroup = document.createElement("span");
-  fmRatioGroup.className = "slider-group";
-  const fmRatioName = document.createElement("span");
-  fmRatioName.textContent = "FM ratio";
-  fmRatioGroup.appendChild(fmRatioName);
-  fmRatioSlider = document.createElement("input");
-  fmRatioSlider.type = "range";
-  fmRatioSlider.min = "0.5";
-  fmRatioSlider.max = "5";
-  fmRatioSlider.step = "0.1";
-  fmRatioSlider.value = "1.2";
-  fmRatioSlider.style.marginLeft = "0.35rem";
-  fmRatioGroup.appendChild(fmRatioSlider);
-  const fmRatioVal = document.createElement("span");
-  fmRatioVal.textContent = "1.2";
-  fmRatioVal.style.marginLeft = "0.35rem";
-  fmRatioGroup.appendChild(fmRatioVal);
-  fmRatioSlider.oninput = () => {
-    fmRatioVal.textContent = parseFloat(fmRatioSlider.value).toFixed(1);
-  };
-  row.appendChild(fmRatioGroup);
-
-  const fmAmtGroup = document.createElement("span");
-  fmAmtGroup.className = "slider-group";
-  const fmAmtName = document.createElement("span");
-  fmAmtName.textContent = "FM amount";
-  fmAmtGroup.appendChild(fmAmtName);
-  fmAmountSlider = document.createElement("input");
-  fmAmountSlider.type = "range";
-  fmAmountSlider.min = "0";
-  fmAmountSlider.max = "240";
-  fmAmountSlider.step = "5";
-  fmAmountSlider.value = "100";
-  fmAmountSlider.style.marginLeft = "0.35rem";
-  fmAmtGroup.appendChild(fmAmountSlider);
-  const fmAmtVal = document.createElement("span");
-  fmAmtVal.textContent = "100 Hz";
-  fmAmtVal.style.marginLeft = "0.35rem";
-  fmAmtGroup.appendChild(fmAmtVal);
-  fmAmountSlider.oninput = () => {
-    fmAmtVal.textContent = `${Math.round(parseFloat(fmAmountSlider.value))} Hz`;
-  };
-  row.appendChild(fmAmtGroup);
-
-  const fmDecayGroup = document.createElement("span");
-  fmDecayGroup.className = "slider-group";
-  const fmDecayName = document.createElement("span");
-  fmDecayName.textContent = "FM decay";
-  fmDecayGroup.appendChild(fmDecayName);
-  fmDecaySlider = document.createElement("input");
-  fmDecaySlider.type = "range";
-  fmDecaySlider.min = "10";
-  fmDecaySlider.max = "450";
-  fmDecaySlider.step = "5";
-  fmDecaySlider.value = "90";
-  fmDecaySlider.style.marginLeft = "0.35rem";
-  fmDecayGroup.appendChild(fmDecaySlider);
-  const fmDecayVal = document.createElement("span");
-  fmDecayVal.textContent = "90 ms";
-  fmDecayVal.style.marginLeft = "0.35rem";
-  fmDecayGroup.appendChild(fmDecayVal);
-  fmDecaySlider.oninput = () => {
-    fmDecayVal.textContent = `${Math.round(parseFloat(fmDecaySlider.value))} ms`;
-  };
-  row.appendChild(fmDecayGroup);
-
-  container.appendChild(row);
+  container.appendChild(panel);
 
   activePattern = getPatternById(patternSelect.value);
 }
@@ -561,6 +430,7 @@ function updateKickEngineState(now, dt) {
   const patternEnabled = patternCheckbox && patternCheckbox.checked;
   const autoEnabled = autoTriggerCheckbox && autoTriggerCheckbox.checked;
 
+  // First decide whether this animation frame should trigger a new hit.
   if (patternEnabled) {
     if (patternStartTime < 0) patternStartTime = now;
     const bpm = max(30, parseFloat(bpmSlider.value || "120"));
@@ -584,6 +454,7 @@ function updateKickEngineState(now, dt) {
   const fmAmountHz = parseFloat(fmAmountSlider.value);
   const fmDecayMs = parseFloat(fmDecaySlider.value);
 
+  // Then turn the last hit time into envelope values for pitch, amplitude, and FM depth.
   let ampEnv = 0;
   let pitchEnv = 0;
   let fmEnv = 0;
@@ -615,6 +486,7 @@ function updateKickEngineState(now, dt) {
     carrier.setAmp(BASE_AMP * ampEnv, 0.004);
   }
 
+  // The scopes are visual approximations only; the actual sound is controlled above.
   previewPhase += TWO_PI * currentFreq * max(dt, 0);
   const outputPreview = sin(previewPhase) * ampEnv;
 

@@ -126,6 +126,155 @@
       button:hover {
         background: #f3efe3;
       }
+
+      /* Readable control layout shared by the p5 Editor learning copies. */
+      main {
+        max-width: 1180px;
+        margin: 1rem auto;
+        padding: 1.25rem;
+        border-radius: 8px;
+      }
+      details.guide {
+        padding: 0.65rem 0.8rem;
+        border-radius: 8px;
+      }
+      [id$="-container"] canvas,
+      #sketch-container canvas,
+      #sh-container canvas,
+      #fm-container canvas,
+      #am-ring-container canvas {
+        border-radius: 6px;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+      }
+      .controls-panel {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e6dfd1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+        gap: 0.8rem;
+        align-items: start;
+      }
+      .controls-panel .row,
+      .controls-panel.control-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.55rem;
+        margin-top: 0;
+        padding: 0.8rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 8px;
+        background: #fffaf0;
+      }
+      .controls-panel .row + .row {
+        margin-top: 0;
+      }
+      .row-label {
+        min-width: 0;
+        font-weight: 650;
+        color: #333;
+      }
+      button,
+      select {
+        min-height: 32px;
+        padding: 0.3rem 0.7rem;
+      }
+      select {
+        max-width: 100%;
+      }
+      .control-pair,
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-width: 0;
+      }
+      .control-pair label,
+      .control-pair span:first-child {
+        flex: 0 0 9rem;
+        min-width: 0;
+        color: #333;
+      }
+      .control-pair select {
+        flex: 1 1 auto;
+      }
+      .slider-group,
+      .partial-group {
+        margin-left: 0;
+      }
+      .controls-panel .slider-group,
+      .controls-panel .partial-group {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(120px, 170px) 4rem;
+        align-items: center;
+        gap: 0.45rem;
+        white-space: normal;
+      }
+      .controls-panel .slider-group span,
+      .controls-panel .partial-group span {
+        min-width: 0;
+        margin-left: 0 !important;
+        text-align: left;
+      }
+      .controls-panel .slider-group .slider-label,
+      .controls-panel .partial-group .slider-label,
+      .controls-panel .slider-group span:first-child,
+      .controls-panel .partial-group span:first-child {
+        color: #333;
+        line-height: 1.25;
+      }
+      .controls-panel .slider-group .slider-value,
+      .controls-panel .partial-group .slider-value,
+      .controls-panel .slider-group span:last-child,
+      .controls-panel .partial-group span:last-child {
+        color: #555;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .controls-panel input[type="range"] {
+        width: 100%;
+        margin-left: 0 !important;
+      }
+      @media (max-width: 720px) {
+        body {
+          padding: 0.5rem;
+        }
+        main {
+          margin: 0;
+          padding: 0.9rem;
+        }
+        .controls-panel {
+          grid-template-columns: 1fr;
+        }
+        .controls-panel .slider-group,
+        .controls-panel .partial-group {
+          grid-template-columns: 1fr;
+          gap: 0.25rem;
+        }
+        .controls-panel .slider-group .slider-value,
+        .controls-panel .partial-group .slider-value,
+        .controls-panel .slider-group span:last-child,
+        .controls-panel .partial-group span:last-child {
+          text-align: left;
+        }
+        .control-pair {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .control-pair label,
+        .control-pair span:first-child {
+          flex-basis: auto;
+        }
+      }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
@@ -141,7 +290,10 @@
         sound.
       </p>
 
-      <details class="guide" open>
+
+      <div id="sketch-container"></div>
+
+      <details class="guide">
         <summary>Controls guide (what each control does)</summary>
         <dl>
           <dt><code>Input function</code></dt>
@@ -164,7 +316,6 @@
           </dd>
         </dl>
       </details>
-      <div id="sketch-container"></div>
     </main>
   </body>
 </html>

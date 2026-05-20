@@ -51,6 +51,8 @@ let perlinSource = null;
 let perlinGainNode = null;
 let perlinPreviewChunk = [];
 
+// Reading map: UI chooses source/rhythm/envelope, getEnvelopeAt advances the step pattern,
+// and updatePercussionState applies the envelope to the current noise source.
 // Setup + UI
 function setup() {
   const container = document.getElementById("noise-perc-container");
@@ -81,21 +83,33 @@ function windowResized() {
 }
 
 function createUI(container) {
-  const topRow = document.createElement("div");
-  topRow.className = "controls controls-panel";
+  const panel = document.createElement("div");
+  panel.className = "controls controls-panel";
+
+  const transportRow = document.createElement("div");
+  transportRow.className = "row";
+
+  const transportLabel = document.createElement("span");
+  transportLabel.className = "row-label";
+  transportLabel.textContent = "Transport";
+  transportRow.appendChild(transportLabel);
 
   playButton = document.createElement("button");
   playButton.textContent = "Start";
   playButton.onclick = togglePlay;
-  topRow.appendChild(playButton);
-  container.appendChild(topRow);
+  transportRow.appendChild(playButton);
 
-  const row = document.createElement("div");
-  row.className = "controls controls-row";
+  const sourceRow = document.createElement("div");
+  sourceRow.className = "row";
+
+  const sourceRowLabel = document.createElement("span");
+  sourceRowLabel.className = "row-label";
+  sourceRowLabel.textContent = "Source and rhythm";
+  sourceRow.appendChild(sourceRowLabel);
 
   const sourceLabel = document.createElement("label");
   sourceLabel.textContent = "Source:";
-  row.appendChild(sourceLabel);
+  sourceRow.appendChild(sourceLabel);
 
   sourceSelect = document.createElement("select");
   [
@@ -119,11 +133,12 @@ function createUI(container) {
       if (!noiseCarrier.started) noiseCarrier.start();
     }
   };
-  row.appendChild(sourceSelect);
+  sourceRow.appendChild(sourceSelect);
 
   const rateGroup = document.createElement("span");
   rateGroup.className = "slider-group";
   const rateLabel = document.createElement("span");
+  rateLabel.className = "slider-label";
   rateLabel.textContent = "Hit rate";
   rateGroup.appendChild(rateLabel);
 
@@ -133,22 +148,20 @@ function createUI(container) {
   envRateSlider.max = "12";
   envRateSlider.step = "0.1";
   envRateSlider.value = "3.2";
-  envRateSlider.style.marginLeft = "0.35rem";
   rateGroup.appendChild(envRateSlider);
 
   const rateValue = document.createElement("span");
+  rateValue.className = "slider-value";
   rateValue.textContent = "3.2 Hz";
-  rateValue.style.marginLeft = "0.35rem";
   rateGroup.appendChild(rateValue);
   envRateSlider.oninput = () => {
     rateValue.textContent = `${parseFloat(envRateSlider.value).toFixed(1)} Hz`;
   };
-  row.appendChild(rateGroup);
+  sourceRow.appendChild(rateGroup);
 
   const sequenceLabel = document.createElement("label");
   sequenceLabel.textContent = "Sequence:";
-  sequenceLabel.style.marginLeft = "0.75rem";
-  row.appendChild(sequenceLabel);
+  sourceRow.appendChild(sequenceLabel);
 
   envSequenceSelect = document.createElement("select");
   [
@@ -171,12 +184,19 @@ function createUI(container) {
     lastTriggerTime = now - 1;
     resetScopes();
   };
-  row.appendChild(envSequenceSelect);
+  sourceRow.appendChild(envSequenceSelect);
+
+  const envelopeRow = document.createElement("div");
+  envelopeRow.className = "row";
+
+  const envelopeRowLabel = document.createElement("span");
+  envelopeRowLabel.className = "row-label";
+  envelopeRowLabel.textContent = "Envelope";
+  envelopeRow.appendChild(envelopeRowLabel);
 
   const typeLabel = document.createElement("label");
   typeLabel.textContent = "Envelope:";
-  typeLabel.style.marginLeft = "0.75rem";
-  row.appendChild(typeLabel);
+  envelopeRow.appendChild(typeLabel);
 
   envTypeSelect = document.createElement("select");
   [
@@ -189,11 +209,12 @@ function createUI(container) {
     envTypeSelect.appendChild(o);
   });
   envTypeSelect.value = "ad";
-  row.appendChild(envTypeSelect);
+  envelopeRow.appendChild(envTypeSelect);
 
   const attackGroup = document.createElement("span");
   attackGroup.className = "slider-group";
   const attackLabel = document.createElement("span");
+  attackLabel.className = "slider-label";
   attackLabel.textContent = "Attack";
   attackGroup.appendChild(attackLabel);
 
@@ -203,24 +224,22 @@ function createUI(container) {
   envAttackSlider.max = "0.12";
   envAttackSlider.step = "0.001";
   envAttackSlider.value = "0.006";
-  envAttackSlider.style.marginLeft = "0.35rem";
   attackGroup.appendChild(envAttackSlider);
 
   const attackValue = document.createElement("span");
+  attackValue.className = "slider-value";
   attackValue.textContent = "6 ms";
-  attackValue.style.marginLeft = "0.35rem";
   attackGroup.appendChild(attackValue);
   envAttackSlider.oninput = () => {
     attackValue.textContent = `${Math.round(
       parseFloat(envAttackSlider.value) * 1000
     )} ms`;
   };
-  row.appendChild(attackGroup);
+  envelopeRow.appendChild(attackGroup);
 
   const curveLabel = document.createElement("label");
   curveLabel.textContent = "Attack curve:";
-  curveLabel.style.marginLeft = "0.75rem";
-  row.appendChild(curveLabel);
+  envelopeRow.appendChild(curveLabel);
 
   envAttackCurveSelect = document.createElement("select");
   [
@@ -234,11 +253,12 @@ function createUI(container) {
     envAttackCurveSelect.appendChild(o);
   });
   envAttackCurveSelect.value = "linear";
-  row.appendChild(envAttackCurveSelect);
+  envelopeRow.appendChild(envAttackCurveSelect);
 
   const tailGroup = document.createElement("span");
   tailGroup.className = "slider-group";
   const tailLabel = document.createElement("span");
+  tailLabel.className = "slider-label";
   tailLabel.textContent = "Decay/Release";
   tailGroup.appendChild(tailLabel);
 
@@ -248,21 +268,23 @@ function createUI(container) {
   envTailSlider.max = "1.0";
   envTailSlider.step = "0.01";
   envTailSlider.value = "0.22";
-  envTailSlider.style.marginLeft = "0.35rem";
   tailGroup.appendChild(envTailSlider);
 
   const tailValue = document.createElement("span");
+  tailValue.className = "slider-value";
   tailValue.textContent = "220 ms";
-  tailValue.style.marginLeft = "0.35rem";
   tailGroup.appendChild(tailValue);
   envTailSlider.oninput = () => {
     tailValue.textContent = `${Math.round(
       parseFloat(envTailSlider.value) * 1000
     )} ms`;
   };
-  row.appendChild(tailGroup);
+  envelopeRow.appendChild(tailGroup);
 
-  container.appendChild(row);
+  panel.appendChild(transportRow);
+  panel.appendChild(sourceRow);
+  panel.appendChild(envelopeRow);
+  container.appendChild(panel);
 }
 
 // Sound + state update
@@ -374,6 +396,7 @@ function getEnvelopeAt(t) {
   const interval = 1 / hitRate;
   const pattern = getSequencePattern();
 
+  // Advance through any rhythmic steps that elapsed since the previous draw().
   if (nextStepTime <= 0) nextStepTime = t;
 
   while (t >= nextStepTime) {
@@ -395,6 +418,7 @@ function getEnvelopeAt(t) {
     : "linear";
 
   if (envType === "ar") {
+    // AR holds briefly at full level before releasing; AD decays immediately after attack.
     const hold = max(0.01, interval * 0.35);
     if (elapsed < attack) {
       return {

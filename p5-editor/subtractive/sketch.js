@@ -78,6 +78,7 @@ let loopState = {
   nextStepTime: 0,
 };
 
+// Reading map: UI builds controls, triggerNote schedules one voice, loopScheduler retriggers it.
 /**
  * Subtractive synthesis (no build step)
  *
@@ -116,6 +117,7 @@ function createSubUI(container) {
   const panel = document.createElement("div");
   panel.className = "controls controls-panel";
 
+  // Each row is a labelled control group; the controls themselves stay explicit for p5 editor readability.
   const makeRow = (title) => {
     const row = document.createElement("div");
     row.className = "row";
@@ -228,13 +230,11 @@ function sliderGroup(container, labelText, minV, maxV, stepV, defaultV, fmt) {
   slider.max = `${maxV}`;
   slider.step = `${stepV}`;
   slider.value = `${defaultV}`;
-  slider.style.marginLeft = "0.35rem";
   group.appendChild(slider);
 
   const valueSpan = document.createElement("span");
   valueSpan.className = "slider-value";
   valueSpan.textContent = fmt(defaultV);
-  valueSpan.style.marginLeft = "0.35rem";
   group.appendChild(valueSpan);
 
   slider.oninput = () => {
@@ -263,6 +263,7 @@ function ensureGraph() {
   if (!audioCtx) audioCtx = getAudioContext();
   if (oscNode && filterNode && ampNode) return;
 
+  // One long-lived mono voice: oscillator -> filter -> amp -> output.
   const ctx = audioCtx;
 
   oscNode = ctx.createOscillator();
@@ -439,6 +440,7 @@ function loopScheduler() {
   if (!loopState.isOn || !isRunning) return;
   if (!audioCtx) return;
 
+  // Schedule a small lookahead window so the loop stays steady between draw() frames.
   const now = audioCtx.currentTime;
   const lookahead = 0.12;
   const stepDur = secondsPerStep();
@@ -468,6 +470,7 @@ function loopScheduler() {
 }
 
 function updateSubtractiveVisualState(dt, currentFreq) {
+  // These values are read back from AudioParams for the drawing only.
   const envGuess = ampNode ? clamp01(ampNode.gain.value / SUB_BASE_AMP) : 0;
   const cutoffGuess = filterNode
     ? map(Math.log(Math.max(60, filterNode.frequency.value)), Math.log(60), Math.log(8000), 0, 1, true)
@@ -547,4 +550,3 @@ function draw() {
   fill(255);
   text(modeLabel, 20, height - 6);
 }
-

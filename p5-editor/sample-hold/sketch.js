@@ -60,11 +60,17 @@ function setup() {
 
 function createSHUI(container) {
   const row = document.createElement("div");
-  row.className = "controls controls-panel";
+  row.className = "controls controls-panel control-stack";
+
+  const rowLabel = document.createElement("span");
+  rowLabel.className = "row-label";
+  rowLabel.textContent = "Sample-and-hold controls";
+  row.appendChild(rowLabel);
 
   const baseGroup = document.createElement("span");
   baseGroup.className = "slider-group";
   const baseLabel = document.createElement("span");
+  baseLabel.className = "slider-label";
   baseLabel.textContent = "Base";
   baseGroup.appendChild(baseLabel);
 
@@ -74,12 +80,11 @@ function createSHUI(container) {
   baseFreqSlider.max = "880";
   baseFreqSlider.step = "1";
   baseFreqSlider.value = "220";
-  baseFreqSlider.style.marginLeft = "0.35rem";
   baseGroup.appendChild(baseFreqSlider);
 
   const baseVal = document.createElement("span");
+  baseVal.className = "slider-value";
   baseVal.textContent = "220 Hz";
-  baseVal.style.marginLeft = "0.35rem";
   baseGroup.appendChild(baseVal);
 
   baseFreqSlider.oninput = () => {
@@ -90,6 +95,7 @@ function createSHUI(container) {
   const rangeGroup = document.createElement("span");
   rangeGroup.className = "slider-group";
   const rangeLabel = document.createElement("span");
+  rangeLabel.className = "slider-label";
   rangeLabel.textContent = "Range";
   rangeGroup.appendChild(rangeLabel);
 
@@ -99,12 +105,11 @@ function createSHUI(container) {
   rangeSlider.max = "36";
   rangeSlider.step = "1";
   rangeSlider.value = "12";
-  rangeSlider.style.marginLeft = "0.35rem";
   rangeGroup.appendChild(rangeSlider);
 
   const rangeVal = document.createElement("span");
+  rangeVal.className = "slider-value";
   rangeVal.textContent = "±12";
-  rangeVal.style.marginLeft = "0.35rem";
   rangeGroup.appendChild(rangeVal);
 
   rangeSlider.oninput = () => {
@@ -115,6 +120,7 @@ function createSHUI(container) {
   const rateGroup = document.createElement("span");
   rateGroup.className = "slider-group";
   const rateLabel = document.createElement("span");
+  rateLabel.className = "slider-label";
   rateLabel.textContent = "Rate";
   rateGroup.appendChild(rateLabel);
 
@@ -124,12 +130,11 @@ function createSHUI(container) {
   rateSlider.max = "20";
   rateSlider.step = "0.1";
   rateSlider.value = "4";
-  rateSlider.style.marginLeft = "0.35rem";
   rateGroup.appendChild(rateSlider);
 
   const rateVal = document.createElement("span");
+  rateVal.className = "slider-value";
   rateVal.textContent = "4.0 Hz";
-  rateVal.style.marginLeft = "0.35rem";
   rateGroup.appendChild(rateVal);
 
   rateSlider.oninput = () => {
@@ -140,18 +145,15 @@ function createSHUI(container) {
   quantizeCheckbox = document.createElement("input");
   quantizeCheckbox.type = "checkbox";
   quantizeCheckbox.id = "sh-quantize";
-  quantizeCheckbox.style.marginLeft = "0.75rem";
   row.appendChild(quantizeCheckbox);
 
   const qLabel = document.createElement("label");
   qLabel.htmlFor = "sh-quantize";
   qLabel.textContent = "Quantise major";
-  qLabel.style.marginLeft = "0.25rem";
   row.appendChild(qLabel);
 
   shPlayButton = document.createElement("button");
   shPlayButton.textContent = "Start";
-  shPlayButton.style.marginLeft = "0.75rem";
   shPlayButton.onclick = toggleSHPlay;
   row.appendChild(shPlayButton);
 

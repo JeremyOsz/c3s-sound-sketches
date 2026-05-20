@@ -103,7 +103,6 @@ function createFMUI(container) {
 
     const mLabel = document.createElement("label");
     mLabel.textContent = "Modulator source";
-    mLabel.style.marginLeft = "0.75rem";
     group.appendChild(mLabel);
 
     fmModSourceSelect = document.createElement("select");
@@ -124,7 +123,6 @@ function createFMUI(container) {
 
     fmPlayButton = document.createElement("button");
     fmPlayButton.textContent = "Start";
-    fmPlayButton.style.marginLeft = "0.75rem";
     fmPlayButton.onclick = toggleFMPlay;
     group.appendChild(fmPlayButton);
 

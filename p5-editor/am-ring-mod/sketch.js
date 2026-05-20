@@ -84,7 +84,12 @@ function windowResized() {
 
 function createUI(container) {
   const row = document.createElement("div");
-  row.className = "controls controls-panel";
+  row.className = "controls controls-panel control-stack";
+
+  const rowLabel = document.createElement("span");
+  rowLabel.className = "row-label";
+  rowLabel.textContent = "AM / ring-mod controls";
+  row.appendChild(rowLabel);
 
   const cLabel = document.createElement("label");
   cLabel.textContent = "Carrier:";
@@ -109,7 +114,6 @@ function createUI(container) {
 
   const mLabel = document.createElement("label");
   mLabel.textContent = "Modulator wave:";
-  mLabel.style.marginLeft = "0.75rem";
   row.appendChild(mLabel);
 
   modWaveSelect = document.createElement("select");
@@ -129,6 +133,7 @@ function createUI(container) {
   const rateGroup = document.createElement("span");
   rateGroup.className = "slider-group";
   const rateLabel = document.createElement("span");
+  rateLabel.className = "slider-label";
   rateLabel.textContent = "Rate";
   rateGroup.appendChild(rateLabel);
 
@@ -138,12 +143,11 @@ function createUI(container) {
   rateSlider.max = "40";
   rateSlider.step = "0.1";
   rateSlider.value = "4";
-  rateSlider.style.marginLeft = "0.35rem";
   rateGroup.appendChild(rateSlider);
 
   const rateVal = document.createElement("span");
+  rateVal.className = "slider-value";
   rateVal.textContent = "4.0 Hz";
-  rateVal.style.marginLeft = "0.35rem";
   rateGroup.appendChild(rateVal);
   rateSlider.oninput = () => {
     rateVal.textContent = `${parseFloat(rateSlider.value).toFixed(1)} Hz`;
@@ -153,6 +157,7 @@ function createUI(container) {
   const depthGroup = document.createElement("span");
   depthGroup.className = "slider-group";
   const depthLabel = document.createElement("span");
+  depthLabel.className = "slider-label";
   depthLabel.textContent = "Depth";
   depthGroup.appendChild(depthLabel);
 
@@ -162,12 +167,11 @@ function createUI(container) {
   depthSlider.max = "1";
   depthSlider.step = "0.01";
   depthSlider.value = "0.7";
-  depthSlider.style.marginLeft = "0.35rem";
   depthGroup.appendChild(depthSlider);
 
   const depthVal = document.createElement("span");
+  depthVal.className = "slider-value";
   depthVal.textContent = "0.70";
-  depthVal.style.marginLeft = "0.35rem";
   depthGroup.appendChild(depthVal);
   depthSlider.oninput = () => {
     depthVal.textContent = parseFloat(depthSlider.value).toFixed(2);
@@ -177,18 +181,15 @@ function createUI(container) {
   fastModCheckbox = document.createElement("input");
   fastModCheckbox.type = "checkbox";
   fastModCheckbox.id = "fast-mod-toggle";
-  fastModCheckbox.style.marginLeft = "0.75rem";
   row.appendChild(fastModCheckbox);
 
   const audioLabel = document.createElement("label");
   audioLabel.htmlFor = "fast-mod-toggle";
   audioLabel.textContent = "fast mod (ring-mod-ish)";
-  audioLabel.style.marginLeft = "0.25rem";
   row.appendChild(audioLabel);
 
   amPlayButton = document.createElement("button");
   amPlayButton.textContent = "Start";
-  amPlayButton.style.marginLeft = "0.75rem";
   amPlayButton.onclick = togglePlay;
   row.appendChild(amPlayButton);
 

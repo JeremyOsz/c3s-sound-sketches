@@ -91,17 +91,25 @@ function createUI(container) {
   const panel = document.createElement("div");
   panel.className = "controls controls-panel";
 
-  const row = document.createElement("div");
-  row.className = "row";
+  const transportRow = document.createElement("div");
+  transportRow.className = "row";
+
+  const transportLabel = document.createElement("span");
+  transportLabel.className = "row-label";
+  transportLabel.textContent = "Transport and source";
+  transportRow.appendChild(transportLabel);
 
   playButton = document.createElement("button");
   playButton.textContent = "Start";
   playButton.onclick = togglePlay;
-  row.appendChild(playButton);
+  transportRow.appendChild(playButton);
+
+  const breakPair = document.createElement("div");
+  breakPair.className = "control-pair";
 
   const breakLabel = document.createElement("label");
   breakLabel.textContent = "Break";
-  row.appendChild(breakLabel);
+  breakPair.appendChild(breakLabel);
 
   breakSelect = document.createElement("select");
   BREAKS.forEach((item) => {
@@ -112,35 +120,58 @@ function createUI(container) {
   });
   breakSelect.value = BREAKS[0].id;
   breakSelect.onchange = loadSelectedBreak;
-  row.appendChild(breakSelect);
+  breakPair.appendChild(breakSelect);
+  transportRow.appendChild(breakPair);
+
+  const timingRow = document.createElement("div");
+  timingRow.className = "row";
+
+  const timingLabel = document.createElement("span");
+  timingLabel.className = "row-label";
+  timingLabel.textContent = "Timing";
+  timingRow.appendChild(timingLabel);
 
   ({ slider: bpmSlider, valueSpan: bpmValue } = sliderGroup("BPM", 70, 180, 1, 142, (v) => `${Math.round(v)}`));
-  row.appendChild(bpmSlider.parentElement);
+  timingRow.appendChild(bpmSlider.parentElement);
 
   ({ slider: stepRateSlider, valueSpan: stepRateValue } = sliderGroup("Rate", 1, 8, 1, STEP_RATE_DEFAULT, (v) => `${Math.round(v)}/beat`));
-  row.appendChild(stepRateSlider.parentElement);
+  timingRow.appendChild(stepRateSlider.parentElement);
+
+  const slicingRow = document.createElement("div");
+  slicingRow.className = "row";
+
+  const slicingLabel = document.createElement("span");
+  slicingLabel.className = "row-label";
+  slicingLabel.textContent = "Slice selection";
+  slicingRow.appendChild(slicingLabel);
 
   ({ slider: slicesSlider, valueSpan: slicesValue } = sliderGroup("Slices", 4, 32, 1, DEFAULT_SLICE_COUNT, (v) => `${Math.round(v)}`));
   slicesSlider.oninput = () => {
     slicesValue.textContent = `${Math.round(parseFloat(slicesSlider.value))}`;
     computeWaveformPeaks();
   };
-  row.appendChild(slicesSlider.parentElement);
+  slicingRow.appendChild(slicesSlider.parentElement);
 
   ({ slider: holdDriftSlider, valueSpan: holdDriftValue } = sliderGroup("Hold drift", 0, 1, 0.01, HOLD_DRIFT_DEFAULT, (v) => v.toFixed(2)));
-  row.appendChild(holdDriftSlider.parentElement);
+  slicingRow.appendChild(holdDriftSlider.parentElement);
 
   quantizeCheckbox = document.createElement("input");
   quantizeCheckbox.type = "checkbox";
   quantizeCheckbox.id = "slice-quantize";
   quantizeCheckbox.checked = true;
-  row.appendChild(quantizeCheckbox);
-  const quantLabel = document.createElement("label");
-  quantLabel.htmlFor = "slice-quantize";
-  quantLabel.textContent = "Quantise";
-  row.appendChild(quantLabel);
+  const quantizeToggle = document.createElement("label");
+  quantizeToggle.className = "toggle";
+  quantizeToggle.htmlFor = "slice-quantize";
+  quantizeToggle.appendChild(quantizeCheckbox);
 
-  panel.appendChild(row);
+  const quantLabel = document.createElement("span");
+  quantLabel.textContent = "Quantise";
+  quantizeToggle.appendChild(quantLabel);
+  slicingRow.appendChild(quantizeToggle);
+
+  panel.appendChild(transportRow);
+  panel.appendChild(timingRow);
+  panel.appendChild(slicingRow);
   container.appendChild(panel);
 }
 
@@ -149,6 +180,7 @@ function sliderGroup(labelText, minV, maxV, stepV, defaultV, fmt) {
   group.className = "slider-group";
 
   const label = document.createElement("span");
+  label.className = "slider-label";
   label.textContent = labelText;
   group.appendChild(label);
 

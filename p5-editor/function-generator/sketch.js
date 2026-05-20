@@ -78,9 +78,20 @@ function createUI(container) {
   const wrapper = document.createElement("div");
   wrapper.className = "controls controls-panel";
 
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const rowLabel = document.createElement("span");
+  rowLabel.className = "row-label";
+  rowLabel.textContent = "Function source";
+  row.appendChild(rowLabel);
+
+  const modePair = document.createElement("div");
+  modePair.className = "control-pair";
+
   const label = document.createElement("label");
-  label.textContent = "Input function:";
-  wrapper.appendChild(label);
+  label.textContent = "Input function";
+  modePair.appendChild(label);
 
   modeSelect = document.createElement("select");
   [
@@ -100,11 +111,16 @@ function createUI(container) {
     currentMode = modeSelect.value;
     generateAndPreview();
   };
-  wrapper.appendChild(modeSelect);
+  modePair.appendChild(modeSelect);
+  row.appendChild(modePair);
 
-  const frequencyLabel = document.createElement("label");
-  frequencyLabel.textContent = "Frequency (Hz):";
-  wrapper.appendChild(frequencyLabel);
+  const frequencyGroup = document.createElement("span");
+  frequencyGroup.className = "slider-group";
+
+  const frequencyLabel = document.createElement("span");
+  frequencyLabel.className = "slider-label";
+  frequencyLabel.textContent = "Frequency";
+  frequencyGroup.appendChild(frequencyLabel);
 
   frequencySlider = document.createElement("input");
   frequencySlider.type = "range";
@@ -115,20 +131,22 @@ function createUI(container) {
   frequencySlider.oninput = () => {
     setTargetFrequency(Number(frequencySlider.value));
   };
-  wrapper.appendChild(frequencySlider);
+  frequencyGroup.appendChild(frequencySlider);
 
   frequencyValue = document.createElement("span");
+  frequencyValue.className = "slider-value";
   frequencyValue.textContent = `${targetFrequency.toFixed(2)} Hz`;
-  wrapper.appendChild(frequencyValue);
+  frequencyGroup.appendChild(frequencyValue);
+  row.appendChild(frequencyGroup);
 
   playButton = document.createElement("button");
   playButton.textContent = "Play loop";
   playButton.onclick = togglePlay;
-  wrapper.appendChild(playButton);
+  row.appendChild(playButton);
 
-  container.prepend(wrapper);
+  wrapper.appendChild(row);
+  container.appendChild(wrapper);
 }
-
 // Sound + state update
 function generateAndPreview() {
   // Ensure audio context is running (required by some browsers)

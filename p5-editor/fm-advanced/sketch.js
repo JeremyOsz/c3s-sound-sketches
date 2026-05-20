@@ -73,7 +73,12 @@ function windowResized() {
 
 function createFMAdvancedUI(container) {
   const row = document.createElement("div");
-  row.className = "controls controls-panel";
+  row.className = "controls controls-panel control-stack";
+
+  const rowLabel = document.createElement("span");
+  rowLabel.className = "row-label";
+  rowLabel.textContent = "Two-operator FM controls";
+  row.appendChild(rowLabel);
 
   // Algorithm (ratio presets)
   const algoLabel = document.createElement("label");
@@ -110,13 +115,11 @@ function createFMAdvancedUI(container) {
   modIndexSlider.max = String(ADV_MAX_INDEX);
   modIndexSlider.step = "10";
   modIndexSlider.value = "280";
-  modIndexSlider.style.marginLeft = "0.35rem";
   idxGroup.appendChild(modIndexSlider);
 
   const idxVal = document.createElement("span");
   idxVal.className = "slider-value";
   idxVal.textContent = "280";
-  idxVal.style.marginLeft = "0.35rem";
   idxGroup.appendChild(idxVal);
 
   modIndexSlider.oninput = () => {
@@ -138,12 +141,10 @@ function createFMAdvancedUI(container) {
   envAttackSlider.max = "2";
   envAttackSlider.step = "0.01";
   envAttackSlider.value = "0.1";
-  envAttackSlider.style.marginLeft = "0.35rem";
   atkGroup.appendChild(envAttackSlider);
   const atkVal = document.createElement("span");
   atkVal.className = "slider-value";
   atkVal.textContent = "0.10";
-  atkVal.style.marginLeft = "0.35rem";
   atkGroup.appendChild(atkVal);
   envAttackSlider.oninput = () => {
     atkVal.textContent = parseFloat(envAttackSlider.value).toFixed(2);
@@ -162,12 +163,10 @@ function createFMAdvancedUI(container) {
   envDecaySlider.max = "4";
   envDecaySlider.step = "0.05";
   envDecaySlider.value = "1";
-  envDecaySlider.style.marginLeft = "0.35rem";
   decGroup.appendChild(envDecaySlider);
   const decVal = document.createElement("span");
   decVal.className = "slider-value";
   decVal.textContent = "1.00";
-  decVal.style.marginLeft = "0.35rem";
   decGroup.appendChild(decVal);
   envDecaySlider.oninput = () => {
     decVal.textContent = parseFloat(envDecaySlider.value).toFixed(2);
@@ -186,12 +185,10 @@ function createFMAdvancedUI(container) {
   envSustainSlider.max = "1";
   envSustainSlider.step = "0.01";
   envSustainSlider.value = "0.5";
-  envSustainSlider.style.marginLeft = "0.35rem";
   susGroup.appendChild(envSustainSlider);
   const susVal = document.createElement("span");
   susVal.className = "slider-value";
   susVal.textContent = "0.50";
-  susVal.style.marginLeft = "0.35rem";
   susGroup.appendChild(susVal);
   envSustainSlider.oninput = () => {
     susVal.textContent = parseFloat(envSustainSlider.value).toFixed(2);
@@ -211,12 +208,10 @@ function createFMAdvancedUI(container) {
   feedbackSlider.max = String(ADV_MAX_FEEDBACK);
   feedbackSlider.step = "0.01";
   feedbackSlider.value = "0.2";
-  feedbackSlider.style.marginLeft = "0.35rem";
   fbGroup.appendChild(feedbackSlider);
   const fbVal = document.createElement("span");
   fbVal.className = "slider-value";
   fbVal.textContent = "0.20";
-  fbVal.style.marginLeft = "0.35rem";
   fbGroup.appendChild(fbVal);
   feedbackSlider.oninput = () => {
     fbVal.textContent = parseFloat(feedbackSlider.value).toFixed(2);
@@ -226,7 +221,6 @@ function createFMAdvancedUI(container) {
   // Play button
   fmAdvPlayButton = document.createElement("button");
   fmAdvPlayButton.textContent = "Trigger note";
-  fmAdvPlayButton.style.marginLeft = "0.75rem";
   fmAdvPlayButton.onclick = triggerFMNote;
   row.appendChild(fmAdvPlayButton);
 

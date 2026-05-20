@@ -192,6 +192,9 @@ const tracks = PARAM_DEFAULTS.tracks.map((t) => ({
   level: t.level,
 }));
 
+// Reading map: setup/createUI build the grid, scheduler walks the 16 steps,
+// and each create*Engine factory owns one track's sound.
+
 // --- Engines ---
 let mixBus = null;
 let masterFilter = null; // bandpass on whole groovebox
