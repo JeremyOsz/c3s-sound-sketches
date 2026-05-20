@@ -287,6 +287,11 @@ function scheduleStep(time) {
   triggerSlice(time, sliceIndex, slices);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — breakbeat-slicer (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   triggerSlice() — schedule buffer slice playback and gain ramps.
+// ═══════════════════════════════════════════════════════════════════════════
 function triggerSlice(time, sliceIndex, slices) {
   const sliceDur = breakBuffer.duration / slices;
   const offset = sliceIndex * sliceDur;

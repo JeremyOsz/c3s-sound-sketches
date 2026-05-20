@@ -130,7 +130,12 @@ function createWTUI(container) {
   container.appendChild(row);
 }
 
-// Sound + state update
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — wavetable (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   rebuildWavetable() — additive partials fill the wavetable buffer.
+// ═══════════════════════════════════════════════════════════════════════════
+
 function rebuildWavetable() {
   userStartAudio();
   const buf = audioCtxWT.createBuffer(1, WT_SIZE, audioCtxWT.sampleRate);

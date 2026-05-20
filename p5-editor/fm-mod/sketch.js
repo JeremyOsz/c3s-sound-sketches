@@ -201,6 +201,11 @@ function toggleFMPlay() {
   fmPlayButton.textContent = "Start";
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — fm-mod (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   fmModSignal() — modulation source shapes the operator output.
+// ═══════════════════════════════════════════════════════════════════════════
 function fmModSignal(t, source, freq) {
   if (source === "white-noise") return random(-1, 1);
   if (source === "perlin-noise") return noise(t * freq * 0.2) * 2 - 1;

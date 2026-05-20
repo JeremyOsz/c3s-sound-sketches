@@ -552,6 +552,11 @@ function expEnv(elapsedSec, decayMs) {
   return exp(-elapsedSec / tau);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — fm-am-kick (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   updateKickEngineState() — pitch drop, FM amount, amps per hit.
+// ═══════════════════════════════════════════════════════════════════════════
 function updateKickEngineState(now, dt) {
   const patternEnabled = patternCheckbox && patternCheckbox.checked;
   const autoEnabled = autoTriggerCheckbox && autoTriggerCheckbox.checked;

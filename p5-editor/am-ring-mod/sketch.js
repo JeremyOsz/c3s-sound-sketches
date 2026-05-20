@@ -248,6 +248,11 @@ function carrierPreviewSample(t, carrierType) {
   return sin(phase);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — am-ring-mod (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   applyAudio() — carrier routing, AM envelope to output.
+// ═══════════════════════════════════════════════════════════════════════════
 function applyAudio(envelope) {
   if (!isPlaying) return;
   const currentCarrier = carrierSelect ? carrierSelect.value : "white-noise";

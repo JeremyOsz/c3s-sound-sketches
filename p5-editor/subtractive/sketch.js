@@ -345,6 +345,11 @@ function scheduleADSR(param, now, adsr, peak, sustain) {
   };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — subtractive (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   triggerNote() — subtractive voice: osc, filter ADSR, amp ADSR.
+// ═══════════════════════════════════════════════════════════════════════════
 function triggerNote(opts) {
   userStartAudio();
   ensureGraph();

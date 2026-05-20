@@ -134,6 +134,10 @@ function generateAndPreview() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — function-generator (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+
 function createFunctionBuffer(mode) {
   const buf = audioCtx.createBuffer(1, FG_BUFFER_SIZE, audioCtx.sampleRate);
   const data = buf.getChannelData(0);

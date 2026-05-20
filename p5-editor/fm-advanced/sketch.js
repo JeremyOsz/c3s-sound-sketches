@@ -297,6 +297,11 @@ function stepEnv(env, dt, params) {
   return env;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — fm-advanced (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   updateFMAdvancedState() — two-op FM envelope, ratios, feedback.
+// ═══════════════════════════════════════════════════════════════════════════
 function updateFMAdvancedState() {
   const audioCtx = getAudioContext();
   const now = audioCtx.currentTime;

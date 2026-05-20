@@ -429,6 +429,11 @@ function getEnvelopeAt(t) {
   return { envelope: 0, triggerNow };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — noise-percussion (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   updatePercussionState() — envelope + noise source mix per step.
+// ═══════════════════════════════════════════════════════════════════════════
 function updatePercussionState(now) {
   const result = getEnvelopeAt(now);
   const envelope = constrain(result.envelope, 0, 1);

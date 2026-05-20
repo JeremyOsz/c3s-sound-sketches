@@ -64,7 +64,7 @@ const PARAM_RANGES = {
 };
 
 const PARAM_DEFAULTS = {
-  canvas: { widthMin: 320, widthMax: 1020, height: 380 },
+  canvas: { widthMin: 320, widthMax: 1020, height: 320 },
 
   scheduler: { lookaheadSec: 0.12 },
 
@@ -269,21 +269,26 @@ function createUI(container) {
   tracks.forEach((track) => {
     const labelWrap = document.createElement("div");
     labelWrap.className = "track-label";
-    labelWrap.textContent = track.name;
+
+    const trackName = document.createElement("span");
+    trackName.className = "track-name";
+    trackName.textContent = track.name;
+    labelWrap.appendChild(trackName);
 
     const mute = document.createElement("input");
     mute.type = "checkbox";
     mute.className = "track-mute";
     mute.title = `Mute ${track.name}`;
+    mute.ariaLabel = `Mute ${track.name}`;
     mute.onchange = () => {
       track.muted = !!mute.checked;
     };
     labelWrap.appendChild(mute);
 
     const soloBtn = document.createElement("button");
-    soloBtn.textContent = "Solo";
+    soloBtn.textContent = "S";
     soloBtn.title = `Solo ${track.name}`;
-    soloBtn.style.marginLeft = "0.35rem";
+    soloBtn.ariaLabel = `Solo ${track.name}`;
     soloBtn.className = "tiny";
     soloBtn.onclick = () => {
       track.solo = !track.solo;
@@ -580,13 +585,11 @@ function sliderGroup(container, labelText, minV, maxV, stepV, defaultV, fmt) {
   slider.max = `${maxV}`;
   slider.step = `${stepV}`;
   slider.value = `${defaultV}`;
-  slider.style.marginLeft = "0.35rem";
   group.appendChild(slider);
 
   const valueSpan = document.createElement("span");
   valueSpan.className = "slider-value";
   valueSpan.textContent = fmt(defaultV);
-  valueSpan.style.marginLeft = "0.35rem";
   group.appendChild(valueSpan);
 
   slider.oninput = () => {
@@ -781,6 +784,11 @@ function swingOffsetSec(step, stepDur) {
   return step % 2 === 1 ? swing * stepDur * 0.5 : 0;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — groovebox (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   scheduler / scheduleStep — step sequencer and track triggers.
+// ═══════════════════════════════════════════════════════════════════════════
 function scheduler() {
   if (!isPlaying) return;
   // Lookahead scheduling keeps timing steady even if draw() fluctuates.

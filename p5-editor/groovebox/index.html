@@ -14,12 +14,12 @@
         color: #222;
       }
       main {
-        max-width: 1120px;
-        margin: 1.5rem auto;
-        padding: 1.5rem;
+        max-width: 1180px;
+        margin: 1rem auto;
+        padding: 1.25rem;
         background: #fffdf7;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-        border-radius: 16px;
+        border-radius: 8px;
       }
       h1 {
         margin-top: 0;
@@ -33,9 +33,9 @@
       }
       details.guide {
         margin: 0.75rem 0 1rem;
-        padding: 0.75rem 0.9rem;
+        padding: 0.65rem 0.8rem;
         border: 1px solid #e6dfd1;
-        border-radius: 12px;
+        border-radius: 8px;
         background: #fffaf0;
       }
       details.guide summary {
@@ -80,8 +80,13 @@
         display: block;
         max-width: 100%;
         height: auto;
+        border-radius: 6px;
       }
       .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
         margin-bottom: 0.75rem;
         font-size: 0.9rem;
       }
@@ -89,16 +94,24 @@
         margin-top: 0.75rem;
         padding-top: 0.75rem;
         border-top: 1px solid #e6dfd1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+        gap: 0.8rem;
+        align-items: start;
       }
       .controls-panel .row {
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        gap: 0.6rem;
+        gap: 0.55rem;
         margin-top: 0;
+        padding: 0.8rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 8px;
+        background: #fffaf0;
       }
       .controls-panel .row + .row {
-        margin-top: 0.85rem;
+        margin-top: 0;
       }
       .controls-panel .row-label {
         min-width: 0;
@@ -112,7 +125,8 @@
       }
       button,
       select {
-        padding: 0.25rem 0.6rem;
+        min-height: 32px;
+        padding: 0.3rem 0.7rem;
         border-radius: 999px;
         border: 1px solid #ccc;
         background: #fff;
@@ -129,10 +143,10 @@
       }
       .controls-panel .slider-group {
         margin-left: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.25rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(120px, 170px) 4rem;
+        align-items: center;
+        gap: 0.45rem;
         white-space: normal;
       }
       .controls-panel .slider-group span {
@@ -152,34 +166,46 @@
       }
       .controls-panel .slider-group .slider-value {
         min-width: 0;
-        text-align: left;
+        text-align: right;
         color: #555;
       }
       .controls-panel input[type="range"] {
-        width: min(360px, 100%);
+        width: 100%;
       }
       .grid {
         margin: 0.5rem 0 0.75rem;
         display: grid;
-        grid-template-columns: 96px repeat(16, 1fr);
-        gap: 0.35rem;
+        grid-template-columns: minmax(132px, 148px) repeat(16, minmax(28px, 1fr));
+        gap: 0.28rem;
         align-items: center;
+        overflow-x: auto;
+        padding-bottom: 0.4rem;
       }
       .track-label {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 0.35rem;
+        align-items: center;
         font-weight: 650;
         font-size: 0.92rem;
         color: #333;
+        padding-right: 0.2rem;
+      }
+      .track-name {
+        min-width: 0;
       }
       .track-label button {
-        padding: 0.15rem 0.45rem;
+        padding: 0.2rem 0.45rem;
       }
       .track-label .tiny {
         font-size: 0.82rem;
-        padding: 0.1rem 0.4rem;
+        min-height: 24px;
+        min-width: 30px;
+        padding: 0.15rem 0.45rem;
       }
       .step {
-        height: 26px;
-        border-radius: 8px;
+        height: 24px;
+        border-radius: 6px;
         border: 1px solid #d8d0c2;
         background: #fff;
         cursor: pointer;
@@ -193,13 +219,33 @@
         outline-offset: 1px;
       }
       .track-mute {
-        margin-left: 0.5rem;
+        margin: 0;
+        accent-color: #222;
       }
       .toggle {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
         white-space: nowrap;
+      }
+      @media (max-width: 720px) {
+        body {
+          padding: 0.5rem;
+        }
+        main {
+          margin: 0;
+          padding: 0.9rem;
+        }
+        .controls-panel {
+          grid-template-columns: 1fr;
+        }
+        .controls-panel .slider-group {
+          grid-template-columns: 1fr;
+          gap: 0.25rem;
+        }
+        .controls-panel .slider-group .slider-value {
+          text-align: left;
+        }
       }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -215,9 +261,9 @@
         “toy” — but built from the same building blocks as the other sketches.
       </p>
 
-     
+
       <div id="groovebox-container"></div>
-       <details class="guide" open>
+      <details class="guide">
         <summary>Controls guide (what each control does)</summary>
         <p class="hint">
           Tip: push <code>Master filter (Low-pass ← 0 → High-pass)</code> left or

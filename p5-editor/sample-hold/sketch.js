@@ -201,6 +201,11 @@ function mapHeldToFreq(value) {
   return base * pow(2, targetSemis / 12);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  LIVE DEMO — sample-hold (search: DEMO_ANCHOR)
+// ═══════════════════════════════════════════════════════════════════════════
+//   sampleHeldValueIfDue() — S&H steps the held random driving the carrier.
+// ═══════════════════════════════════════════════════════════════════════════
 function sampleHeldValueIfDue(now, rate) {
   const interval = 1 / rate;
   if (shCarrier.started && now - lastSampleTime >= interval) {
