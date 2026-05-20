@@ -15,4 +15,4 @@ Sample one cycle of a function into a buffer, then loop it fast enough to hear p
 
 ## Code Reading Prompt
 
-Try changing FG_BUFFER_SIZE, MIN_FREQUENCY, MAX_FREQUENCY, or the default currentMode.
+Try changing FG_BUFFER_SIZE, MIN_FREQUENCY, MAX_FREQUENCY, or the default current mode (including the the white-noise and Perlin options (looped vs streaming): repeated loop vs non-repeating stream).

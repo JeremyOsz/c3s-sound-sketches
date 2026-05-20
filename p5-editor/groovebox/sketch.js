@@ -208,9 +208,15 @@ let lastDrawTime = 0;
 let previewPhase = 0;
 
 /**
+ * Resolve the AudioNode that should receive the groovebox master chain.
+ *
  * p5.sound sits between WebAudio and the speakers. Routing through
  * `p5.soundOut.input` keeps behavior consistent with the other sketches and
- * avoids “silent” output paths in some setups.
+ * avoids silent output paths in some editor or embed setups where writing
+ * straight to `ctx.destination` does not match p5.sound graph integration.
+ *
+ * @param {AudioContext} ctx - Active Web Audio context (from `getAudioContext()`).
+ * @returns {AudioNode} `p5.soundOut.input` when available, otherwise `ctx.destination`.
  */
 function getOutputNode(ctx) {
   return (window.p5 && window.p5.soundOut && window.p5.soundOut.input)
@@ -218,7 +224,16 @@ function getOutputNode(ctx) {
     : ctx.destination;
 }
 
-// Setup + UI
+/**
+ * p5 lifecycle entry for this sketch.
+ *
+ * - Sizes the canvas to the `#groovebox-container` clamped by `PARAM_DEFAULTS.canvas`.
+ * - Selects monospace type for HUD text.
+ * - Resolves `audioCtx = getAudioContext()` and primes `userStartAudio()` so the tab
+ *   is allowed to make sound once the user interacts.
+ * - Delegates DOM construction to {@link createUI}, but does **not** allocate oscillators,
+ *   filters, or the master chain until {@link togglePlay} → {@link ensureEngines} runs.
+ */
 function setup() {
   const container = document.getElementById("groovebox-container");
   if (!container) {
@@ -241,6 +256,10 @@ function setup() {
   createUI(container);
 }
 
+/**
+ * p5 resize hook: recomputes width from `#groovebox-container` whenever the embedding
+ * page changes layout while keeping fixed height (`PARAM_DEFAULTS.canvas.height`).
+ */
 function windowResized() {
   const container = document.getElementById("groovebox-container");
   if (!container) return;
@@ -252,6 +271,25 @@ function windowResized() {
   resizeCanvas(nextWidth, height);
 }
 
+/**
+ * Build all HTML controls appended to `container`. Roughly top-to-bottom:
+ *
+ * 1. **Transport** row – Play button calling {@link togglePlay}.
+ * 2. **Sequencer matrix** – for each `{@link tracks}` entry, mute checkbox, mutually-aware solo
+ *    toggle, plus `STEPS` buttons that flip `pattern[i]` and CSS `.on` for filled steps.
+ * 3. **Performance** – Tap tempo ({@link onTapTempo}), BPM slider → `params.bpm`, Swing →
+ *    `params.swing`, master volume `{@link masterVolSlider}` + live `masterGain` retarget.
+ * 4. **Track levels** – per-row faders mutate `track.level` and mirrored `params.trackLevels`.
+ * 5. **Filters** – bipolar master Amount/Q (`applyMasterFilterParams` + routing refresh),
+ *    melodic LP enable + freq/Q wired to `{@link applyMelodicFilterParams}`.
+ * 6. **Lead modulation** – S&H pitch spread and tremolo-like AM depths stored inside `params.leadMod`
+ *    consumed by `{@link createLeadEngine}` triggers.
+ *
+ * Globals such as sliders and `{@link stepButtonsByTrack}` intentionally capture DOM nodes
+ * for cheap redraw syncing without a reactive framework.
+ *
+ * @param {HTMLElement} container
+ */
 function createUI(container) {
   const row = document.createElement("div");
   row.className = "controls";
@@ -570,6 +608,20 @@ function createUI(container) {
   container.appendChild(controlsPanelEl);
 }
 
+/**
+ * Builds a horizontally laid-out `{ label, slider, formatted value span }` cluster.
+ *
+ * - `slider` min/max/step are stringified attrs as required by the DOM.
+ * - Hooking `slider.oninput` chains: wrappers in `createUI` usually call prior handlers
+ *   then update application state (`params`, `track.level`, AudioParam ramps, etc.).
+ *
+ * @param {HTMLElement} container – Row element receiving the fragment.
+ * @param {string} labelText – Left caption before the knob.
+ * @param {number} minV, maxV, stepV – Native range semantics.
+ * @param {number} defaultV – Initial `slider.value` + first `fmt` output.
+ * @param {function(number): string} fmt – Turns the float knob position into readable text.
+ * @returns {{ slider: HTMLInputElement, valueSpan: HTMLSpanElement }}
+ */
 function sliderGroup(container, labelText, minV, maxV, stepV, defaultV, fmt) {
   const group = document.createElement("span");
   group.className = "slider-group";
@@ -600,6 +652,20 @@ function sliderGroup(container, labelText, minV, maxV, stepV, defaultV, fmt) {
   return { slider, valueSpan };
 }
 
+/**
+ * Lazy constructor for everything past the UI scaffolding.
+ *
+ * Graph recipe when cold:
+ * - `mixBus` unity gain sums all `{@link createKickEngine}`…`{@link createLeadEngine}` sends.
+ * - `masterFilter` is configured immediately via `{@link applyMasterFilterParams}` but may be bypassed
+ *   in `{@link updateMasterRouting}` when amount ≈ 0.
+ * - Post-fader `{@link masterLimiter}` DynamicsCompressor tame transients going into `{@link getOutputNode}`.
+ *
+ * Because WebAudio forbids restarting stopped oscillators cheaply, this sketch prefers long-lived oscillators inside
+ * the engines (`create*` helpers) toggled purely with gain + frequency automation on each scheduled hit.
+ *
+ * When `masterGain` already exists the function exits early (`return`) so reconnect logic never doubles up.
+ */
 function ensureEngines() {
   if (!audioCtx) audioCtx = getAudioContext();
   if (masterGain) return;
@@ -630,10 +696,26 @@ function ensureEngines() {
   applyMelodicFilterParams();
 }
 
+/**
+ * The UI bipolar slider snaps through zero to mean “routing bypass”. That flag decides whether
+ * `mixBus` connects straight into `masterGain` or through the shared biquad acting as either
+ * low-pass (negative side) or high-pass (positive side).
+ *
+ * @returns {boolean}
+ */
 function isMasterFilterActive() {
   return Math.abs(params.masterFilter.amount) >= 0.0001;
 }
 
+/**
+ * Because filter bypass means physically removing `masterFilter` from the chain, this helper
+ * aggressively `disconnect()`s each stage then rebuilds edges. `try/catch` swallows double-disconnect noise.
+ *
+ * When `isInitial` is false (user toggled filter amount), `masterGain.gain` is re-asserted with
+ * `setTargetAtTime` so level changes do not click after the graph hop.
+ *
+ * @param {boolean} isInitial – First-time wiring skips the gain envelope (values already static).
+ */
 function updateMasterRouting(isInitial) {
   if (!audioCtx || !mixBus || !masterGain || !masterFilter || !masterLimiter) return;
 
@@ -671,6 +753,17 @@ function updateMasterRouting(isInitial) {
   }
 }
 
+/**
+ * Interprets `params.masterFilter.amount`:
+ *
+ * - `< 0` → `lowpass`, morphing cutoff from ~18 kHz “open” down toward `lowpassCutoffMinHz`.
+ * - `> 0` → `highpass`, opening from ~20 Hz subsonic baseline up toward `highpassCutoffMaxHz`.
+ * - Magnitude is curved by `responseCurveExp` so small knob moves near center stay subtle.
+ *
+ * `isInitial` chooses between hard assignment (constructor path) and `setTargetAtTime` smoothing while playing.
+ *
+ * @param {boolean} [isInitial=false]
+ */
 function applyMasterFilterParams(isInitial = false) {
   if (!audioCtx || !masterFilter) return;
 
@@ -706,7 +799,19 @@ function applyMasterFilterParams(isInitial = false) {
   masterFilter.Q.setTargetAtTime(q, now, 0.01);
 }
 
-// Sound + state update
+/**
+ * Central play/pause control bound to the DOM Play button.
+ *
+ * **Start path:** ensures engines, flips `isPlaying`, sets button label, resets `currentStep`, and
+ * schedules the first tick slightly in the future (`nextStepTime = now + 0.05`) so `{@link scheduler}`
+ * has a deterministic entry point.
+ *
+ * **Stop path:** clears transport flag, restores button copy, calls `{@link clearStepHighlights}`.
+ *
+ * Continuous timing work happens from `{@link draw}` → `{@link scheduler}` while `isPlaying` stays true.
+ *
+ * @see scheduler
+ */
 function togglePlay() {
   userStartAudio();
   audioCtx = getAudioContext();
@@ -726,6 +831,7 @@ function togglePlay() {
   clearStepHighlights();
 }
 
+// Best-effort teardown when leaving the page — WebAudio nodes otherwise keep running briefly in some browsers.
 window.addEventListener("beforeunload", () => {
   try {
     kick && kick.stop && kick.stop();
@@ -753,6 +859,10 @@ window.addEventListener("beforeunload", () => {
   } catch (_) {}
 });
 
+/**
+ * Transport-off cleanup: removes CSS `.playing` markers from the matrix so no column glows
+ * when audio is silent.
+ */
 function clearStepHighlights() {
   for (const track of tracks) {
     const btns = stepButtonsByTrack[track.id] || [];
@@ -760,6 +870,12 @@ function clearStepHighlights() {
   }
 }
 
+/**
+ * Mirrors whichever step column was most recently processed by `{@link scheduleStep}`.
+ * Purely decorative – does not affect timing.
+ *
+ * @param {number} step – 0-indexed column within `STEPS === 16` grid.
+ */
 function highlightStep(step) {
   for (const track of tracks) {
     const btns = stepButtonsByTrack[track.id] || [];
@@ -767,16 +883,34 @@ function highlightStep(step) {
   }
 }
 
+/**
+ * The drum grid is quantized to 16ths: one bar splits into `STEPS = 16`, so each cell lasts one 16th-note.
+ *
+ * @returns {number} Seconds per 16th-note at the (clamped) BPM in `params.bpm`.
+ */
 function secondsPerStep() {
   // 16th notes = quarter note / 4.
   const bpm = Math.max(30, params.bpm);
   return (60 / bpm) / 4; // 16th notes
 }
 
+/**
+ * Reads the UI swing slider into the safe numeric window defined by `{@link PARAM_RANGES.swing}`.
+ *
+ * @returns {number}
+ */
 function getSwingAmount() {
   return Math.max(0, Math.min(PARAM_RANGES.swing.max, params.swing));
 }
 
+/**
+ * Applies “MPC-style” swing by nudging odd-index 16ths later in time. Even steps stay on the straight grid;
+ * odds pick up up to `swing * stepDur * 0.5` lag (see inline comment in body).
+ *
+ * @param {number} step – Index of the column firing.
+ * @param {number} stepDur – Output of `{@link secondsPerStep}` reused to scale swing consistently with tempo.
+ * @returns {number} Additional seconds added before scheduling note events at this column.
+ */
 function swingOffsetSec(step, stepDur) {
   const swing = getSwingAmount();
   if (swing <= 0) return 0;
@@ -784,6 +918,18 @@ function swingOffsetSec(step, stepDur) {
   return step % 2 === 1 ? swing * stepDur * 0.5 : 0;
 }
 
+/**
+ * Web Audio “pull” loop running once per animation frame while transport is on.
+ *
+ * Maintains `nextStepTime` slightly ahead of ``audioCtx.currentTime`` by up to
+ * `PARAM_DEFAULTS.scheduler.lookaheadSec`, filling the schedule window in a `while` loop so bursts of
+ * `{@link scheduleStep}` calls catch up if `{@link draw}` was blocked temporarily. This is why timing still
+ * feels tight even though the host is p5’s render loop rather than `requestAnimationFrame` + audio worklet.
+ *
+ * Mutates `currentStep` modulo `{@link STEPS}` after each scheduled column.
+ *
+ * @see scheduleStep
+ */
 // ═══════════════════════════════════════════════════════════════════════════
 //  LIVE DEMO — groovebox (search: DEMO_ANCHOR)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -803,6 +949,19 @@ function scheduler() {
   }
 }
 
+/**
+ * Audio-side execution for a single grid column.
+ *
+ * 1. Updates UI via `{@link highlightStep}`.
+ * 2. Evaluates **solo safe-guard** – if any track is soloed, non-solo rows are skipped entirely.
+ * 3. Applies **mute** gates and **pattern** bits – empty cells mean silence.
+ * 4. Computes `t0 = time + swingOffsetSec(...)` so swung hits share the same column index.
+ * 5. Normalizes `{@link tracks}` row `level` into `vel` clamped `[0,1]` and forwards to `{@link kick}`,
+ *    `{@link perc}`, `{@link bass}`, `{@link lead}` engines with their disparate `trigger(...)` arity.
+ *
+ * @param {number} step – Active column (0…`STEPS`-1).
+ * @param {number} time – Absolute audio timeline position for this column’s theoretical downbeat.
+ */
 function scheduleStep(step, time) {
   highlightStep(step);
   // Solo logic: if any solo button is active, only soloed tracks play.
@@ -825,6 +984,19 @@ function scheduleStep(step, time) {
 
 // --- Track engines ---
 
+/**
+ * Factory for the kick row. Internally a run-once `{@link OscillatorNode}` + `{@link GainNode}` pair.
+ *
+ * Each `{@link trigger}`:
+ * - Retriggers an exponential pitch glide from `PARAM_DEFAULTS.kick.startHz` to the subs `baseHz`.
+ * - Shapes amplitude with a near-instant attack and longer decay; `vel` scales the ceiling.
+ *
+ * `stop()` exists for page unload hygiene – stops/disconnects nodes so the tab can tear down quietly.
+ *
+ * @param {AudioContext} ctx
+ * @param {AudioNode} destination – Always `mixBus` in this sketch.
+ * @returns {{ stop(): void, trigger(time: number, vel: number): void }}
+ */
 function createKickEngine(ctx, destination) {
   // Kick: single oscillator with a short pitch drop + exponential amp decay.
   const osc = ctx.createOscillator();
@@ -869,6 +1041,16 @@ function createKickEngine(ctx, destination) {
   };
 }
 
+/**
+ * Noise percussion bed: pre-renders 250 ms of white noise into an `{@link AudioBuffer}` and replays it through
+ * a resonant bandpass whose center frequency animates per hit, plus a shared gain envelope.
+ *
+ * Each trigger spins up a fresh `{@link AudioBufferSourceNode}` (cheap for occasional hits) so overlaps are clean.
+ *
+ * @param {AudioContext} ctx
+ * @param {AudioNode} destination
+ * @returns {{ stop(): void, trigger(time: number, vel: number): void }}
+ */
 function createNoisePercEngine(ctx, destination) {
   // Noise perc: a precomputed noise burst through a bandpass filter.
   const filter = ctx.createBiquadFilter();
@@ -919,6 +1101,17 @@ function createNoisePercEngine(ctx, destination) {
   };
 }
 
+/**
+ * Mono bass voice: sawtooth into a resonant lowpass driven both by per-hit “pluck” envelopes
+ * (`PARAM_DEFAULTS.bass.pluck`) and by the user-facing melodic macro (`applyMelodicFilterParams`).
+ *
+ * Pitch derives from a fixed minor-ish scale (`scale` + `rootMidi`) sampled by the current `step` argument.
+ * Amplitude rides an attack/decay/sustain/decay-off approximation using exponential ramps weighted by `vel`.
+ *
+ * @param {AudioContext} ctx
+ * @param {AudioNode} destination – Usually the shared `mixBus` gain.
+ * @returns {{ filter: BiquadFilterNode, stop(): void, trigger(time: number, step: number, vel: number): void }}
+ */
 function createBassEngine(ctx, destination) {
   // Bass: sawtooth -> lowpass -> gain envelope.
   // Melodic LP controls (below the sequencer) drive this filter.
@@ -988,6 +1181,17 @@ function createBassEngine(ctx, destination) {
   };
 }
 
+/**
+ * Lead voice approximating two-operator FM: a sine modulator patched into `carrier.frequency` through `modGain`,
+ * then the same melodic lowpass + VCA topology as `{@link createBassEngine}`.
+ *
+ * `{@link scheduleStep}` passes `leadModOptions` gathered from sliders – random S&H detune on quarter notes when enabled,
+ * and shallow AM sculpted by stepping `gain.gain` during the decay stage (`PARAM_DEFAULTS.leadMod.amRateHz`).
+ *
+ * @param {AudioContext} ctx
+ * @param {AudioNode} destination
+ * @returns {{ filter: BiquadFilterNode, stop(): void, trigger(time: number, step: number, vel: number, leadModOptions?: object): void }}
+ */
 function createLeadEngine(ctx, destination) {
   // Lead: simple 2-op-ish FM (mod oscillator -> carrier.frequency AudioParam),
   // then lowpass -> gain envelope. Extra recap controls add S&H pitch variation
@@ -1095,6 +1299,14 @@ function createLeadEngine(ctx, destination) {
   };
 }
 
+/**
+ * Gesture-based tempo estimator. Uses `performance.now()` when available.
+ *
+ * Interprets successive taps as quarter-note intervals (`60 / deltaSeconds`), clamps to `{60 … 170}` BPM,
+ * writes `{@link bpmSlider}` / `{@link bpmValueSpan}`, and merges into immutable `{@link params}` snapshots.
+ *
+ * Requires two taps minimum before BPM changes (`lastTapAtMs` gate).
+ */
 function onTapTempo() {
   const nowMs = typeof performance !== "undefined" ? performance.now() : Date.now();
   if (lastTapAtMs > 0) {
@@ -1107,6 +1319,13 @@ function onTapTempo() {
   lastTapAtMs = nowMs;
 }
 
+/**
+ * Dual-send macro for melodic tone control: adjusts both `{@link bass}` and `{@link lead}` `filter` nodes in parallel,
+ * using short `setTargetAtTime` slides so parameter automation feels analog.
+ *
+ * Checkbox bypass keeps routing static – instead cutoff jumps to `PARAM_DEFAULTS.melodicFilter.bypass` wide-open values with minimal Q,
+ * which effectively removes tonal coloring without ripping nodes out of the graph.
+ */
 function applyMelodicFilterParams() {
   if (!audioCtx) return;
   // Bypass is implemented by pushing cutoff very high and Q very low (no reroute).
@@ -1127,6 +1346,13 @@ function applyMelodicFilterParams() {
 }
 
 // Rendering
+/**
+ * Lightweight oscilloscope visualization (not fed from analyzer nodes – purely illustrative).
+ *
+ * @param {number[]} scopeData – Rolling RMS-ish samples stretched to −1…1 nominal range.
+ * @param {number} centerY – Vertical anchor for waveform symmetry.
+ * @param {string} label – Human-readable panel title overlaid inside the bezel.
+ */
 function drawScopePanel(scopeData, centerY, label) {
   const panelWidth = width - 40;
   const panelHalfHeight = 43;
@@ -1152,6 +1378,12 @@ function drawScopePanel(scopeData, centerY, label) {
   text(label, lx + 5, ly);
 }
 
+/**
+ * p5 redraw hook (~60 FPS): paints chrome, drains the sequencer lookahead (`scheduler`),
+ * updates fake `previewPhase` sine accumulation for `{@link outScope}`, renders title/footer telemetry.
+ *
+ * **Important:** actual audio fidelity does not rely on FPS; scheduling uses `audioCtx` clocks instead.
+ */
 function draw() {
   background(250);
   scheduler();

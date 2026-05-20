@@ -1,7 +1,8 @@
 /*
  * p5.js Web Editor learning copy
  * Learning goal: Sample one cycle of a function into a buffer, then loop it fast enough to hear pitch.
- * Try changing: FG_BUFFER_SIZE, MIN_FREQUENCY, MAX_FREQUENCY, or the default currentMode.
+ * Try changing: FG_BUFFER_SIZE, MIN_FREQUENCY, MAX_FREQUENCY, or the default currentMode
+ * (white + Perlin: looped one-period vs streaming non-repeating for each).
  *
  * Paste this file into sketch.js in the p5.js Web Editor, or upload it with
  * the matching index.html from this folder. The sound code uses p5.sound plus
@@ -17,9 +18,13 @@
  * - Looping that buffer turns it into a pitched oscillator.
  * - The UI selects the input function and starts/stops playback.
  * - Audio starts only after a user gesture (`userStartAudio()`), per browser policy.
+ * - Streaming modes use a legacy processor node (okay for small demos).
  */
 let fgCanvas;
 let bufferSource = null;
+let noiseProcessor = null;
+let noiseSilentOsc = null;
+let noiseSilentGain = null;
 let audioCtx = null;
 
 // Try changing these constants to hear or see how the sketch responds.
@@ -29,9 +34,11 @@ const MIN_FREQUENCY = 20;
 const MAX_FREQUENCY = 2000;
 const EDGE_FADE_SAMPLES = 64;
 const BUFFER_PEAK = 0.82;
+const PERLIN_NOISE_U_STEP = 3.0 / FG_BUFFER_SIZE;
 
-let currentMode = "white"; // "white" | "perlin" | "sine"
+let currentMode = "white_repeat";
 let currentBuffer = null;
+let freeModePanelSegments = null;
 let targetFrequency = MIDDLE_C_FREQUENCY;
 
 let modeSelect;
@@ -77,8 +84,10 @@ function createUI(container) {
 
   modeSelect = document.createElement("select");
   [
-    { value: "white", label: "White noise" },
-    { value: "perlin", label: "Perlin-like noise" },
+    { value: "white_repeat", label: "White noise (repeated wave)" },
+    { value: "white_free", label: "White noise (non repeated)" },
+    { value: "perlin_repeat", label: "Perlin sample (looped)" },
+    { value: "perlin_free", label: "Perlin noise (non repeated)" },
     { value: "sine", label: "Simple repeating wave" },
   ].forEach((opt) => {
     const o = document.createElement("option");
@@ -127,41 +136,108 @@ function generateAndPreview() {
   if (!audioCtx) return;
 
   currentBuffer = createFunctionBuffer(currentMode);
-  // If we are currently playing, restart with the new buffer
-  if (bufferSource) {
+  updateFrequencyControlsForMode();
+  if (isPlaybackActive()) {
     stopPlayback();
     startPlayback();
   }
+}
+
+function isBufferedLoopMode(mode = currentMode) {
+  return mode === "white_repeat" || mode === "perlin_repeat" || mode === "sine";
+}
+
+function updateFrequencyControlsForMode() {
+  const enable = isBufferedLoopMode(currentMode);
+  if (frequencySlider) {
+    frequencySlider.disabled = !enable;
+    frequencySlider.title = enable
+      ? "Playback rate maps this buffer length to the target pitch (Hz)."
+      : "N/A for streaming modes — no single loop period.";
+  }
+  if (frequencyValue) {
+    frequencyValue.textContent = enable
+      ? `${targetFrequency.toFixed(2)} Hz`
+      : "— (stream)";
+  }
+}
+
+function isPlaybackActive() {
+  return bufferSource !== null || noiseProcessor !== null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  LIVE DEMO — function-generator (search: DEMO_ANCHOR)
 // ═══════════════════════════════════════════════════════════════════════════
 
+function fillWhiteNoiseArray(target) {
+  for (let i = 0; i < FG_BUFFER_SIZE; i++) {
+    target[i] = random(-1, 1);
+  }
+}
+
+function fillPerlinNoiseArray(target, u0) {
+  for (let i = 0; i < FG_BUFFER_SIZE; i++) {
+    const n = noise(u0 + i * PERLIN_NOISE_U_STEP);
+    target[i] = n * 2 - 1;
+  }
+}
+
 function createFunctionBuffer(mode) {
+  freeModePanelSegments = null;
+
+  if (mode === "white_free") {
+    const buf = audioCtx.createBuffer(1, FG_BUFFER_SIZE, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    fillWhiteNoiseArray(data);
+    conditionLoopBuffer(data);
+
+    const segments = [];
+    const repeatsVis = 4;
+    for (let s = 0; s < repeatsVis; s++) {
+      const seg = new Float32Array(FG_BUFFER_SIZE);
+      fillWhiteNoiseArray(seg);
+      conditionLoopBuffer(seg);
+      segments.push(seg);
+    }
+    freeModePanelSegments = segments;
+
+    return buf;
+  }
+
+  if (mode === "perlin_free") {
+    const buf = audioCtx.createBuffer(1, FG_BUFFER_SIZE, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    fillPerlinNoiseArray(data, 0);
+    conditionLoopBuffer(data);
+
+    const segments = [];
+    const repeatsVis = 4;
+    for (let s = 0; s < repeatsVis; s++) {
+      const seg = new Float32Array(FG_BUFFER_SIZE);
+      fillPerlinNoiseArray(seg, (s + 1) * 409.0);
+      conditionLoopBuffer(seg);
+      segments.push(seg);
+    }
+    freeModePanelSegments = segments;
+
+    return buf;
+  }
+
   const buf = audioCtx.createBuffer(1, FG_BUFFER_SIZE, audioCtx.sampleRate);
   const data = buf.getChannelData(0);
 
-  if (mode === "white") {
-    for (let i = 0; i < FG_BUFFER_SIZE; i++) {
-      data[i] = random(-1, 1);
-    }
-  } else if (mode === "perlin") {
-    // Use p5's noise() as a stand‑in for Perlin noise
-    const scale = 3.0 / FG_BUFFER_SIZE;
-    for (let i = 0; i < FG_BUFFER_SIZE; i++) {
-      const n = noise(i * scale); // 0..1
-      data[i] = n * 2 - 1; // map to -1..1
-    }
+  if (mode === "white_repeat") {
+    fillWhiteNoiseArray(data);
+  } else if (mode === "perlin_repeat") {
+    fillPerlinNoiseArray(data, 0);
   } else if (mode === "sine") {
     for (let i = 0; i < FG_BUFFER_SIZE; i++) {
       const t = (i / FG_BUFFER_SIZE) * TWO_PI;
       data[i] = sin(t);
     }
   } else {
-    for (let i = 0; i < FG_BUFFER_SIZE; i++) {
-      data[i] = random(-1, 1);
-    }
+    fillWhiteNoiseArray(data);
   }
 
   conditionLoopBuffer(data);
@@ -189,8 +265,77 @@ function conditionLoopBuffer(data) {
   }
 }
 
+function disconnectStreamingNoise() {
+  try {
+    if (noiseSilentOsc) {
+      noiseSilentOsc.stop();
+      noiseSilentOsc.disconnect();
+    }
+  } catch (e) {
+    /* already stopped */
+  }
+  noiseSilentOsc = null;
+  if (noiseSilentGain) {
+    try {
+      noiseSilentGain.disconnect();
+    } catch (e) {
+      /* ignore */
+    }
+  }
+  noiseSilentGain = null;
+  if (!noiseProcessor) return;
+  try {
+    noiseProcessor.disconnect();
+  } catch (e) {
+    /* ignore */
+  }
+  noiseProcessor.onaudioprocess = null;
+  noiseProcessor = null;
+}
+
+function startStreamingWithProcessor(fillOutput) {
+  disconnectStreamingNoise();
+  const block = 4096;
+  noiseProcessor = audioCtx.createScriptProcessor(block, 1, 1);
+  noiseProcessor.onaudioprocess = (evt) => {
+    const channel = evt.outputBuffer.getChannelData(0);
+    fillOutput(channel);
+  };
+
+  noiseSilentGain = audioCtx.createGain();
+  noiseSilentGain.gain.value = 0;
+  noiseSilentOsc = audioCtx.createOscillator();
+  noiseSilentOsc.frequency.value = 440;
+  noiseSilentOsc.connect(noiseSilentGain);
+  noiseSilentGain.connect(noiseProcessor);
+  noiseSilentOsc.start();
+
+  noiseProcessor.connect(audioCtx.destination);
+}
+
 function startPlayback() {
+  if (currentMode === "white_free") {
+    startStreamingWithProcessor((channel) => {
+      for (let i = 0; i < channel.length; i++) {
+        channel[i] = (Math.random() * 2 - 1) * BUFFER_PEAK;
+      }
+    });
+    playButton.textContent = "Stop";
+    return;
+  }
+  if (currentMode === "perlin_free") {
+    let u = random(0, 10000);
+    startStreamingWithProcessor((channel) => {
+      for (let i = 0; i < channel.length; i++) {
+        u += PERLIN_NOISE_U_STEP;
+        channel[i] = (noise(u) * 2 - 1) * BUFFER_PEAK;
+      }
+    });
+    playButton.textContent = "Stop";
+    return;
+  }
   if (!currentBuffer) return;
+  disconnectStreamingNoise();
   bufferSource = audioCtx.createBufferSource();
   bufferSource.buffer = currentBuffer;
   bufferSource.loop = true;
@@ -216,7 +361,7 @@ function setTargetFrequency(nextFrequency) {
   if (!isFinite(normalizedFrequency)) return;
 
   targetFrequency = normalizedFrequency;
-  if (frequencyValue) {
+  if (frequencyValue && isBufferedLoopMode()) {
     frequencyValue.textContent = `${targetFrequency.toFixed(2)} Hz`;
   }
 
@@ -226,6 +371,7 @@ function setTargetFrequency(nextFrequency) {
 }
 
 function stopPlayback() {
+  disconnectStreamingNoise();
   if (bufferSource) {
     try {
       bufferSource.stop();
@@ -240,7 +386,7 @@ function stopPlayback() {
 
 function togglePlay() {
   userStartAudio();
-  if (bufferSource) {
+  if (isPlaybackActive()) {
     stopPlayback();
   } else {
     startPlayback();
@@ -290,8 +436,15 @@ function draw() {
 
   drawPanelBackground(20, 70, panelWidth, panelHalfHeight * 2);
   drawPanelBackground(20, 195, panelWidth, panelHalfHeight * 2);
-  drawPanelLabel(20, 70, panelHalfHeight, "single period (input function)");
-  drawPanelLabel(20, 195, panelHalfHeight, "period looped as oscillator");
+  const streamViz = currentMode === "white_free" || currentMode === "perlin_free";
+  const topLabel = streamViz
+    ? "snapshot (display only)"
+    : "single period (input function)";
+  const bottomLabel = streamViz
+    ? "independent traces (not one loop)"
+    : "period looped as oscillator";
+  drawPanelLabel(20, 70, panelHalfHeight, topLabel);
+  drawPanelLabel(20, 195, panelHalfHeight, bottomLabel);
 
   push();
   translate(20, 70);
@@ -324,11 +477,15 @@ function draw() {
   stroke(35, 35, 35, 190);
   if (repeatW > 1) {
     for (let r = 0; r < repeats; r++) {
+      const seg =
+        streamViz && freeModePanelSegments
+          ? freeModePanelSegments[r]
+          : data;
       beginShape();
       for (let x = 0; x < repeatW; x++) {
         const mapped = map(x, 0, repeatW - 1, 0, FG_BUFFER_SIZE - 1);
         const idx = constrain(floor(mapped), 0, FG_BUFFER_SIZE - 1);
-        const y = map(data[idx], -1, 1, panelHalfHeight - 2, -(panelHalfHeight - 2));
+        const y = map(seg[idx], -1, 1, panelHalfHeight - 2, -(panelHalfHeight - 2));
         vertex(r * repeatW + x, y);
       }
       endShape();
@@ -337,13 +494,17 @@ function draw() {
   pop();
 
   const modeLabelMap = {
-    white: "Input: white noise sample",
-    perlin: "Input: Perlin-like smooth noise sample",
+    white_repeat: "Input: white noise (one loop period, pitched when looped)",
+    white_free: "Input: white noise (streaming, not a fixed loop)",
+    perlin_repeat: "Input: Perlin-like (one loop period, pitched when looped)",
+    perlin_free: "Input: Perlin-like (streaming 1D noise, not a fixed loop)",
     sine: "Input: simple sine function",
   };
   textSize(12);
   const modeLabel = modeLabelMap[currentMode] || "";
-  const frequencyLabel = `Target: ${targetFrequency.toFixed(2)} Hz`;
+  const frequencyLabel = isBufferedLoopMode()
+    ? `Target: ${targetFrequency.toFixed(2)} Hz`
+    : "Target: — (no loop pitch)";
   const footerLabel = `${modeLabel} | ${frequencyLabel}`;
   const modeW = textWidth(footerLabel) + 10;
   const modeX = 20;
