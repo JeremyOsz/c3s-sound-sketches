@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sample and Hold Frequency Steps - p5 Editor Learning Copy</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #faf7f1;
+        color: #222;
+      }
+      main {
+        max-width: 900px;
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        background: #fffdf7;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.6rem;
+      }
+      p.description {
+        margin-top: 0.25rem;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: #555;
+      }
+      details.guide {
+        margin: 0.75rem 0 1rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 12px;
+        background: #fffaf0;
+      }
+      details.guide summary {
+        cursor: pointer;
+        font-weight: 650;
+      }
+      .guide p {
+        margin: 0.55rem 0 0.75rem;
+        color: #444;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .guide .hint {
+        color: #555;
+        font-size: 0.9rem;
+      }
+      .guide dl {
+        margin: 0.5rem 0 0;
+      }
+      .guide dt {
+        margin-top: 0.65rem;
+        font-weight: 650;
+      }
+      .guide dd {
+        margin: 0.2rem 0 0 0;
+        color: #444;
+        line-height: 1.35;
+      }
+      .guide code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 0.08rem 0.3rem;
+        border-radius: 6px;
+      }
+      #sh-container {
+        margin-top: 1rem;
+        max-width: 100%;
+      }
+      #sh-container canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .controls {
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+      }
+      .controls-panel {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e6dfd1;
+      }
+      .controls-panel .row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        margin-top: 0;
+      }
+      .controls-panel .row + .row {
+        margin-top: 0.85rem;
+      }
+      .controls-panel .row-label {
+        min-width: 0;
+        font-weight: 650;
+        color: #333;
+      }
+      .controls label {
+        margin-right: 0.5rem;
+      }
+      button,
+      input[type="range"] {
+        font: inherit;
+      }
+      button {
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f3efe3;
+      }
+      .slider-group {
+        display: inline-block;
+        margin-left: 1rem;
+      }
+      .controls-panel .slider-group {
+        margin-left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+        white-space: normal;
+      }
+      .controls-panel .slider-group span {
+        min-width: 0;
+        text-align: left;
+      }
+      .slider-group span {
+        display: inline-block;
+        min-width: 2.7rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .controls-panel .slider-group .slider-label {
+        min-width: 0;
+        text-align: left;
+        color: #333;
+      }
+      .controls-panel .slider-group .slider-value {
+        min-width: 0;
+        text-align: left;
+        color: #555;
+      }
+      .controls-panel input[type="range"] {
+        width: min(360px, 100%);
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <script src="./sketch.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Sample &amp; Hold frequency steps</h1>
+      <p class="description">
+        We sample a noise signal at a regular rate and hold that value to drive
+        an oscillator's pitch. Slow rates give stepping R2‑D2 tones; adding a
+        quantiser snaps steps to musical notes.
+      </p>
+
+      <details class="guide" open>
+        <summary>Controls guide (what each control does)</summary>
+        <dl>
+          <dt><code>Start</code> / <code>Stop</code></dt>
+          <dd>
+            Starts/stops the synth. Browsers require a user gesture before audio
+            will play.
+          </dd>
+
+          <dt><code>Base pitch</code></dt>
+          <dd>The center pitch the sample-and-hold will wander around.</dd>
+
+          <dt><code>Range</code></dt>
+          <dd>How far above/below the base pitch the held values can push.</dd>
+
+          <dt><code>Rate</code></dt>
+          <dd>How fast new random values are sampled and held (in Hz).</dd>
+
+          <dt><code>Quantise to major scale</code></dt>
+          <dd>
+            When enabled, snaps the stepped pitches to notes in a major scale so
+            the output is more “musical”.
+          </dd>
+        </dl>
+      </details>
+      <div id="sh-container"></div>
+    </main>
+  </body>
+</html>
+

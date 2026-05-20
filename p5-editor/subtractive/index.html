@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subtractive Synthesis - p5 Editor Learning Copy</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #faf7f1;
+        color: #222;
+      }
+      main {
+        max-width: 1060px;
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        background: #fffdf7;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.6rem;
+      }
+      p.description {
+        margin-top: 0.25rem;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: #555;
+      }
+      details.guide {
+        margin: 0.75rem 0 1rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 12px;
+        background: #fffaf0;
+      }
+      details.guide summary {
+        cursor: pointer;
+        font-weight: 650;
+      }
+      .guide p {
+        margin: 0.55rem 0 0.75rem;
+        color: #444;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .guide .hint {
+        color: #555;
+        font-size: 0.9rem;
+      }
+      .guide dl {
+        margin: 0.5rem 0 0;
+      }
+      .guide dt {
+        margin-top: 0.65rem;
+        font-weight: 650;
+      }
+      .guide dd {
+        margin: 0.2rem 0 0 0;
+        color: #444;
+        line-height: 1.35;
+      }
+      .guide code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 0.08rem 0.3rem;
+        border-radius: 6px;
+      }
+      #subtractive-container {
+        margin-top: 1rem;
+        max-width: 100%;
+      }
+      #subtractive-container canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .controls {
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+      }
+      .controls-panel {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e6dfd1;
+      }
+      .controls-panel .row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        margin-top: 0;
+      }
+      .controls-panel .row + .row {
+        margin-top: 0.85rem;
+      }
+      .controls-panel .row-label {
+        min-width: 0;
+        font-weight: 650;
+        color: #333;
+      }
+      .controls label {
+        margin-right: 0.5rem;
+      }
+      button,
+      select,
+      input[type="range"] {
+        font: inherit;
+      }
+      button,
+      select {
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f3efe3;
+      }
+      .slider-group {
+        display: inline-block;
+        margin-left: 1rem;
+      }
+      .controls-panel .slider-group {
+        margin-left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+        white-space: normal;
+      }
+      .controls-panel .slider-group span {
+        min-width: 0;
+        text-align: left;
+      }
+      .slider-group span {
+        display: inline-block;
+        min-width: 3rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .controls-panel .slider-group .slider-label {
+        min-width: 0;
+        text-align: left;
+        color: #333;
+      }
+      .controls-panel .slider-group .slider-value {
+        min-width: 0;
+        text-align: left;
+        color: #555;
+      }
+      .controls-panel input[type="range"] {
+        width: min(360px, 100%);
+      }
+      .controls-row {
+        margin-top: 0.35rem;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <script src="./sketch.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Subtractive synthesis: oscillator → lowpass filter → amp</h1>
+      <p class="description">
+        A classic mono subtractive patch: a harmonically rich oscillator is shaped
+        by an amplitude ADSR and a lowpass filter whose cutoff is also driven by
+        its own ADSR. Try a saw + high resonance for “acid-ish” timbres. Enable
+        the loop to hear it in a simple 16‑step pattern.
+      </p>
+      <div id="subtractive-container"></div>
+
+      <details class="guide" open>
+        <summary>Controls guide (what each knob does)</summary>
+        <p>
+          The controls appear in rows above the scope display. Labels are kept
+          short so you can fit a lot on screen; this guide explains what they
+          mean.
+        </p>
+        <p class="hint">
+          Tip: for classic squelch, use <code>saw</code>, raise <code>Res</code>,
+          keep <code>Cut</code> fairly low, and push <code>Env</code> up.
+        </p>
+        <dl>
+          <dt><code>Start audio</code> / <code>Stop audio</code></dt>
+          <dd>
+            Starts/stops the audio graph. Browsers require a user gesture before
+            audio will play.
+          </dd>
+
+          <dt><code>Trigger</code></dt>
+          <dd>
+            Plays one short note using the current settings (amp + filter
+            envelopes).
+          </dd>
+
+          <dt><code>Loop</code> + <code>Pattern</code> + <code>BPM</code></dt>
+          <dd>
+            Enables a simple 16‑step sequencer. <code>Pattern</code> selects a
+            looping phrase; <code>BPM</code> sets tempo.
+          </dd>
+
+          <dt><code>Waveform</code></dt>
+          <dd>Chooses the oscillator waveform: sawtooth (brighter) or square (hollower).</dd>
+
+          <dt><code>Root note (MIDI)</code></dt>
+          <dd>
+            Root note (MIDI note number). The looper’s patterns are offsets from
+            this root.
+          </dd>
+
+          <dt><code>Glide</code></dt>
+          <dd>
+            Portamento time (how quickly pitch slides to the next note), useful
+            for basslines.
+          </dd>
+
+          <dt><code>Amplitude envelope</code> (Attack / Decay / Sustain / Release)</dt>
+          <dd>
+            Amplitude envelope: Attack, Decay, Sustain level, Release. Shapes the
+            loudness over time.
+          </dd>
+
+          <dt><code>Cutoff</code>, <code>Resonance (Q)</code>, <code>Envelope amount</code></dt>
+          <dd>
+            Filter cutoff, resonance, and how strongly the filter envelope moves
+            the cutoff (envelope amount).
+          </dd>
+
+          <dt><code>Filter envelope</code> (Attack / Decay / Sustain / Release)</dt>
+          <dd>
+            Filter envelope: Attack/Decay/Sustain/Release for the cutoff motion.
+          </dd>
+        </dl>
+      </details>
+    </main>
+  </body>
+</html>
+

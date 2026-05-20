@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Function Generator to Looping Oscillator - p5 Editor Learning Copy</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #faf7f1;
+        color: #222;
+      }
+      main {
+        max-width: 900px;
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        background: #fffdf7;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.6rem;
+      }
+      p.description {
+        margin-top: 0.25rem;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: #555;
+      }
+      details.guide {
+        margin: 0.75rem 0 1rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 12px;
+        background: #fffaf0;
+      }
+      details.guide summary {
+        cursor: pointer;
+        font-weight: 650;
+      }
+      .guide p {
+        margin: 0.55rem 0 0.75rem;
+        color: #444;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .guide .hint {
+        color: #555;
+        font-size: 0.9rem;
+      }
+      .guide dl {
+        margin: 0.5rem 0 0;
+      }
+      .guide dt {
+        margin-top: 0.65rem;
+        font-weight: 650;
+      }
+      .guide dd {
+        margin: 0.2rem 0 0 0;
+        color: #444;
+        line-height: 1.35;
+      }
+      .guide code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 0.08rem 0.3rem;
+        border-radius: 6px;
+      }
+      #sketch-container {
+        margin-top: 1rem;
+        max-width: 100%;
+      }
+      #sketch-container canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .controls {
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+      }
+      .controls-panel {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e6dfd1;
+      }
+      .controls-panel .row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        margin-top: 0;
+      }
+      .controls-panel .row + .row {
+        margin-top: 0.85rem;
+      }
+      .controls-panel .row-label {
+        min-width: 0;
+        font-weight: 650;
+        color: #333;
+      }
+      .controls-panel .slider-group span {
+        min-width: 0;
+        text-align: left;
+      }
+      .controls label {
+        margin-right: 0.75rem;
+      }
+      button,
+      select {
+        font: inherit;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f3efe3;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <script src="./sketch.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Function generator → looping oscillator</h1>
+      <p class="description">
+        Choose an input function (white noise, Perlin noise, or a simple wave).
+        We grab one period of that function and loop it as an audio buffer, so
+        you can hear how <em>repeating</em> a function turns it into a pitched
+        sound.
+      </p>
+
+      <details class="guide" open>
+        <summary>Controls guide (what each control does)</summary>
+        <dl>
+          <dt><code>Input function</code></dt>
+          <dd>
+            Chooses the function to sample for one cycle (noise, Perlin-like
+            variation, or a simple wave). That single cycle becomes the looping
+            oscillator waveform.
+          </dd>
+
+          <dt><code>Frequency (Hz)</code></dt>
+          <dd>
+            Sets the target pitch for the looped oscillator. Use it to tune the
+            waveform to a specific note or dial through low to high frequencies.
+          </dd>
+
+          <dt><code>Play loop</code> / <code>Stop</code></dt>
+          <dd>
+            Starts/stops the looped buffer source. Audio may require a user
+            gesture in your browser.
+          </dd>
+        </dl>
+      </details>
+      <div id="sketch-container"></div>
+    </main>
+  </body>
+</html>
+

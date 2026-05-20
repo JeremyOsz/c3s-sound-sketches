@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Groovebox - p5 Editor Learning Copy</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #faf7f1;
+        color: #222;
+      }
+      main {
+        max-width: 1120px;
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        background: #fffdf7;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.6rem;
+      }
+      p.description {
+        margin-top: 0.25rem;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: #555;
+      }
+      details.guide {
+        margin: 0.75rem 0 1rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 12px;
+        background: #fffaf0;
+      }
+      details.guide summary {
+        cursor: pointer;
+        font-weight: 650;
+      }
+      .guide p {
+        margin: 0.55rem 0 0.75rem;
+        color: #444;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .guide .hint {
+        color: #555;
+        font-size: 0.9rem;
+      }
+      .guide dl {
+        margin: 0.5rem 0 0;
+      }
+      .guide dt {
+        margin-top: 0.65rem;
+        font-weight: 650;
+      }
+      .guide dd {
+        margin: 0.2rem 0 0 0;
+        color: #444;
+        line-height: 1.35;
+      }
+      .guide code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 0.08rem 0.3rem;
+        border-radius: 6px;
+      }
+      #groovebox-container {
+        margin-top: 1rem;
+        max-width: 100%;
+      }
+      #groovebox-container canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .controls {
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+      }
+      .controls-panel {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e6dfd1;
+      }
+      .controls-panel .row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        margin-top: 0;
+      }
+      .controls-panel .row + .row {
+        margin-top: 0.85rem;
+      }
+      .controls-panel .row-label {
+        min-width: 0;
+        font-weight: 650;
+        color: #333;
+      }
+      button,
+      select,
+      input[type="range"] {
+        font: inherit;
+      }
+      button,
+      select {
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f3efe3;
+      }
+      .slider-group {
+        display: inline-block;
+        margin-left: 1rem;
+      }
+      .controls-panel .slider-group {
+        margin-left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+        white-space: normal;
+      }
+      .controls-panel .slider-group span {
+        min-width: 0;
+        text-align: left;
+      }
+      .slider-group span {
+        display: inline-block;
+        min-width: 3rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .controls-panel .slider-group .slider-label {
+        min-width: 0;
+        text-align: left;
+        color: #333;
+      }
+      .controls-panel .slider-group .slider-value {
+        min-width: 0;
+        text-align: left;
+        color: #555;
+      }
+      .controls-panel input[type="range"] {
+        width: min(360px, 100%);
+      }
+      .grid {
+        margin: 0.5rem 0 0.75rem;
+        display: grid;
+        grid-template-columns: 96px repeat(16, 1fr);
+        gap: 0.35rem;
+        align-items: center;
+      }
+      .track-label {
+        font-weight: 650;
+        font-size: 0.92rem;
+        color: #333;
+      }
+      .track-label button {
+        padding: 0.15rem 0.45rem;
+      }
+      .track-label .tiny {
+        font-size: 0.82rem;
+        padding: 0.1rem 0.4rem;
+      }
+      .step {
+        height: 26px;
+        border-radius: 8px;
+        border: 1px solid #d8d0c2;
+        background: #fff;
+        cursor: pointer;
+      }
+      .step.on {
+        background: #222;
+        border-color: #222;
+      }
+      .step.playing {
+        outline: 2px solid #c58c3a;
+        outline-offset: 1px;
+      }
+      .track-mute {
+        margin-left: 0.5rem;
+      }
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <script src="./sketch.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Mini groovebox (4 tracks)</h1>
+      <p class="description">
+        A tiny 16-step sequencer driving four synth voices: kick, noise perc,
+        subtractive bass, and a simple FM lead. It’s intentionally small and
+        “toy” — but built from the same building blocks as the other sketches.
+      </p>
+
+     
+      <div id="groovebox-container"></div>
+       <details class="guide" open>
+        <summary>Controls guide (what each control does)</summary>
+        <p class="hint">
+          Tip: push <code>Master filter (Low-pass ← 0 → High-pass)</code> left or
+          right, and crank
+          <code>Master filter resonance (Q)</code> for classic “DJ filter” motion.
+        </p>
+        <dl>
+          <dt><code>Play</code> / <code>Stop</code></dt>
+          <dd>Starts/stops the sequencer clock and audio scheduling.</dd>
+
+          <dt><code>Tap tempo</code></dt>
+          <dd>
+            Tap quarter notes; the groovebox sets BPM from the time between taps.
+          </dd>
+
+          <dt><code>BPM</code></dt>
+          <dd>Tempo for the 16-step sequencer (16th notes).</dd>
+
+          <dt><code>Swing</code></dt>
+          <dd>
+            Delays off-beat 16ths (odd steps) by a percentage of the step length.
+          </dd>
+
+          <dt><code>Volume</code></dt>
+          <dd>Master output volume (post-filters).</dd>
+
+          <dt>Step grid</dt>
+          <dd>
+            Click steps to toggle them on/off. The gold outline shows the current
+            playhead step.
+          </dd>
+
+          <dt><code>Mute</code> (checkbox per track)</dt>
+          <dd>Silences that track (still shows playhead).</dd>
+
+          <dt><code>Solo</code> (button per track)</dt>
+          <dd>
+            If any track is soloed, only soloed tracks are heard (mute still
+            applies).
+          </dd>
+
+          <dt><code>Track levels</code></dt>
+          <dd>
+            Per-track level scaling applied when scheduling each hit/note (a
+            simple “velocity” control).
+          </dd>
+
+          <dt>
+            <code>Master filter (Low-pass ← 0 → High-pass)</code>,
+            <code>Master filter resonance (Q)</code>
+          </dt>
+          <dd>
+            A bipolar master filter over the whole groovebox mix: left is low-pass,
+            right is high-pass, and the center position bypasses the filter.
+          </dd>
+
+          <dt>
+            <code>Melodic low-pass filter</code>,
+            <code>Low-pass frequency (melodic)</code>,
+            <code>Low-pass resonance (Q, melodic)</code>
+          </dt>
+          <dd>
+            A low-pass filter control applied to the melodic tracks (bass + lead).
+            Toggle it off to bypass.
+          </dd>
+
+          <dt><code>Lead S&amp;H pitch</code>, <code>Lead AM</code></dt>
+          <dd>
+            Recap controls on the lead: sample-and-hold pitch variation chooses
+            a held semitone offset every few steps, and AM adds tremolo-style
+            amplitude movement.
+          </dd>
+        </dl>
+      </details>
+    </main>
+  </body>
+</html>

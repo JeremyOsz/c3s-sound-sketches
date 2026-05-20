@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FM + AM Kick - p5 Editor Learning Copy</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #faf7f1;
+        color: #222;
+      }
+      main {
+        max-width: 960px;
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        background: #fffdf7;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.6rem;
+      }
+      p.description {
+        margin-top: 0.25rem;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: #555;
+      }
+      details.guide {
+        margin: 0.75rem 0 1rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 12px;
+        background: #fffaf0;
+      }
+      details.guide summary {
+        cursor: pointer;
+        font-weight: 650;
+      }
+      .guide p {
+        margin: 0.55rem 0 0.75rem;
+        color: #444;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .guide .hint {
+        color: #555;
+        font-size: 0.9rem;
+      }
+      .guide dl {
+        margin: 0.5rem 0 0;
+      }
+      .guide dt {
+        margin-top: 0.65rem;
+        font-weight: 650;
+      }
+      .guide dd {
+        margin: 0.2rem 0 0 0;
+        color: #444;
+        line-height: 1.35;
+      }
+      .guide code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 0.08rem 0.3rem;
+        border-radius: 6px;
+      }
+      #fm-am-kick-container {
+        margin-top: 1rem;
+        max-width: 100%;
+      }
+      #fm-am-kick-container canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .controls {
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+      }
+      .controls-panel {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e6dfd1;
+      }
+      .controls-panel .row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        margin-top: 0;
+      }
+      .controls-panel .row + .row {
+        margin-top: 0.85rem;
+      }
+      .controls-panel .row-label {
+        min-width: 0;
+        font-weight: 650;
+        color: #333;
+      }
+      .controls label {
+        margin-right: 0.5rem;
+      }
+      button,
+      select,
+      input[type="range"] {
+        font: inherit;
+      }
+      button,
+      select {
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f3efe3;
+      }
+      .slider-group {
+        display: inline-block;
+        margin-left: 1rem;
+      }
+      .controls-panel .slider-group {
+        margin-left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+        white-space: normal;
+      }
+      .controls-panel .slider-group span {
+        min-width: 0;
+        text-align: left;
+      }
+      .slider-group span {
+        display: inline-block;
+        min-width: 3rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .controls-panel .slider-group .slider-label {
+        min-width: 0;
+        text-align: left;
+        color: #333;
+      }
+      .controls-panel .slider-group .slider-value {
+        min-width: 0;
+        text-align: left;
+        color: #555;
+      }
+      .controls-panel input[type="range"] {
+        width: min(360px, 100%);
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <script src="./sketch.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Pitched percussion: FM + AM (808-style kick)</h1>
+      <p class="description">
+        A single sine carrier is shaped by amplitude modulation (AM envelope)
+        and frequency modulation (FM punch), with a fast pitch-drop envelope.
+        Tune the controls to get classic 808-style kicks.
+      </p>
+      
+      <div id="fm-am-kick-container"></div>
+
+      <details class="guide" open>
+        <summary>Controls guide (what each knob does)</summary>
+        <p class="hint">
+          Tip: for “more 808”, keep <code>FM decay</code> short (snappy click) and
+          <code>Amplitude decay</code> longer (big tail). For “more tom”, raise
+          <code>Pitch decay</code> and reduce <code>Drop</code>.
+        </p>
+        <dl>
+          <dt><code>Carrier</code> — sound source / waveform</dt>
+          <dd>
+            Chooses what generates the raw sound before envelopes/modulation:
+            <code>sine</code>, <code>square</code>, <code>triangle</code>,
+            <code>saw</code>, <code>noise</code> (bandpass-filtered so it still
+            follows pitch), or <code>perlin sample</code> (a looped single-cycle
+            Perlin-noise waveform).
+          </dd>
+
+          <dt><code>Start audio</code> / <code>Stop audio</code></dt>
+          <dd>
+            Starts (or stops) the WebAudio engine. If audio hasn’t started yet,
+            the synth won’t produce sound.
+          </dd>
+
+          <dt><code>Trigger kick</code></dt>
+          <dd>
+            Plays one hit: it resets the envelopes, creating a pitch drop + FM
+            “punch” at the start and an amplitude decay for the tail.
+          </dd>
+
+          <dt><code>auto trigger</code> + <code>Auto</code> (Hz)</dt>
+          <dd>
+            When enabled, retriggers the kick at a steady rate. <code>Auto</code>
+            is the rate in hits per second (\(\text{Hz}\)).
+          </dd>
+
+          <dt><code>pattern</code> + <code>BPM</code> + pattern dropdown</dt>
+          <dd>
+            Enables a simple step sequencer. Each pattern is a 16-step grid
+            (16th-notes over one bar). <code>BPM</code> sets the tempo; the
+            dropdown selects a common kick pattern (e.g. 4-on-the-floor,
+            half-time, 2-step).
+          </dd>
+
+          <dt><code>Base</code> (Hz) — base pitch of the kick</dt>
+          <dd>
+            The steady frequency the kick falls toward. This is the “tuning” of
+            the kick body (roughly 30–90 Hz here).
+          </dd>
+
+          <dt><code>Drop</code> (st) — pitch drop depth</dt>
+          <dd>
+            How far above the base pitch the hit starts, in semitones
+            (<code>st</code>). Bigger drop = more dramatic “pew / doof” pitch
+            fall at the start.
+          </dd>
+
+          <dt><code>Pitch decay</code> (ms) — pitch envelope decay time</dt>
+          <dd>
+            How quickly the pitch falls back to <code>Base</code> (in
+            milliseconds). Short = sharp “thump”; long = more “boooom / tom”.
+          </dd>
+
+          <dt><code>Amplitude decay</code> (ms) — amplitude envelope decay time</dt>
+          <dd>
+            How long the kick rings out (tail length). Longer values give a
+            sustained 808-style sub tail; shorter values sound tighter.
+          </dd>
+
+          <dt><code>FM ratio</code> — FM ratio (modulator-to-carrier frequency)</dt>
+          <dd>
+            Sets the modulator frequency as <code>Base × FM r</code>. Small
+            ratios tend to sound rounder; higher ratios make brighter, more
+            complex attack spectra.
+          </dd>
+
+          <dt><code>FM amount</code> (Hz) — FM amount (frequency deviation)</dt>
+          <dd>
+            How strongly the modulator bends the carrier frequency, measured as
+            peak deviation in Hz. Higher values increase “click / knock /
+            bite”.
+          </dd>
+
+          <dt><code>FM decay</code> (ms) — FM envelope decay time</dt>
+          <dd>
+            How quickly the FM “punch” fades out. Short values concentrate the
+            brightness at the very start; longer values smear that brightness
+            into the body.
+          </dd>
+        </dl>
+      </details>
+    </main>
+  </body>
+</html>

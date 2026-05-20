@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amplitude / Ring Modulation - p5 Editor Learning Copy</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #faf7f1;
+        color: #222;
+      }
+      main {
+        max-width: 900px;
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        background: #fffdf7;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.6rem;
+      }
+      .controls-row {
+        margin-top: 0.35rem;
+      }
+      p.description {
+        margin-top: 0.25rem;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: #555;
+      }
+      details.guide {
+        margin: 0.75rem 0 1rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid #e6dfd1;
+        border-radius: 12px;
+        background: #fffaf0;
+      }
+      details.guide summary {
+        cursor: pointer;
+        font-weight: 650;
+      }
+      .guide p {
+        margin: 0.55rem 0 0.75rem;
+        color: #444;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .guide .hint {
+        color: #555;
+        font-size: 0.9rem;
+      }
+      .guide dl {
+        margin: 0.5rem 0 0;
+      }
+      .guide dt {
+        margin-top: 0.65rem;
+        font-weight: 650;
+      }
+      .guide dd {
+        margin: 0.2rem 0 0 0;
+        color: #444;
+        line-height: 1.35;
+      }
+      .guide code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 0.08rem 0.3rem;
+        border-radius: 6px;
+      }
+      #am-ring-container {
+        margin-top: 1rem;
+        max-width: 100%;
+      }
+      #am-ring-container canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      .controls {
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+      }
+      .controls-panel {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e6dfd1;
+      }
+      .controls-panel .row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        margin-top: 0;
+      }
+      .controls-panel .row + .row {
+        margin-top: 0.85rem;
+      }
+      .controls-panel .row-label {
+        min-width: 0;
+        font-weight: 650;
+        color: #333;
+      }
+      .controls label {
+        margin-right: 0.5rem;
+      }
+      button,
+      select,
+      input[type="range"] {
+        font: inherit;
+      }
+      button,
+      select {
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        background: #f3efe3;
+      }
+      .slider-group {
+        display: inline-block;
+        margin-left: 1rem;
+      }
+      .controls-panel .slider-group {
+        margin-left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.25rem;
+        white-space: normal;
+      }
+      .controls-panel .slider-group span {
+        min-width: 0;
+        text-align: left;
+      }
+      .slider-group span {
+        display: inline-block;
+        min-width: 2.5rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .controls-panel .slider-group .slider-label {
+        min-width: 0;
+        text-align: left;
+        color: #333;
+      }
+      .controls-panel .slider-group .slider-value {
+        min-width: 0;
+        text-align: left;
+        color: #555;
+      }
+      .controls-panel input[type="range"] {
+        width: min(360px, 100%);
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+    <script src="./sketch.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Amplitude / Ring Modulation</h1>
+      <p class="description">
+        Start with a carrier (sine, saw, square, or noise) and use another wave
+        to modulate amplitude. Low rates give tremolo; fast modulation
+        approaches ring modulation and new timbres. Perlin mode uses a sampled
+        chunk that is looped (function-generator style).
+      </p>
+
+      <details class="guide" open>
+        <summary>Controls guide (what each control does)</summary>
+        <dl>
+          <dt><code>Start</code> / <code>Stop</code></dt>
+          <dd>
+            Starts/stops the audio graph. Browsers require a user gesture before
+            audio will play.
+          </dd>
+
+          <dt><code>Carrier</code></dt>
+          <dd>The sound being amplitude-modulated (what you “hear”).</dd>
+
+          <dt><code>Mod wave</code></dt>
+          <dd>
+            The waveform used to modulate the carrier amplitude. Slow modulation
+            sounds like tremolo; fast modulation approaches ring modulation.
+          </dd>
+
+          <dt><code>Rate</code> (Hz)</dt>
+          <dd>Modulation rate: slow for tremolo, fast for ring-mod-like tones.</dd>
+
+          <dt><code>Depth</code></dt>
+          <dd>How strong the modulation is (0 = none, 1 = full depth).</dd>
+
+          <dt><code>fast mod (ring-mod-ish)</code></dt>
+          <dd>
+            Switches the modulator from slow tremolo rates into fast
+            modulation, generating sidebands and harsher timbres.
+          </dd>
+        </dl>
+      </details>
+      <div id="am-ring-container"></div>
+      <p class="description">
+        Top: carrier waveform preview. Middle: envelope over time. Bottom:
+        output waveform after envelope/modulation is applied.
+      </p>
+      <p class="description">
+        Looking for percussion behavior demos? Open
+        <a href="../noise-percussion/index.html">Noise Percussion sketch</a>.
+      </p>
+    </main>
+  </body>
+</html>
