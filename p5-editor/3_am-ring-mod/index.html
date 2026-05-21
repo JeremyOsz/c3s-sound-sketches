@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Noise Percussion - p5 Editor Learning Copy</title>
+    <title>Amplitude / Ring Modulation - p5 Editor Learning Copy</title>
     <style>
       body {
         margin: 0;
@@ -24,6 +24,9 @@
       h1 {
         margin-top: 0;
         font-size: 1.6rem;
+      }
+      .controls-row {
+        margin-top: 0.35rem;
       }
       p.description {
         margin-top: 0.25rem;
@@ -72,11 +75,11 @@
         padding: 0.08rem 0.3rem;
         border-radius: 6px;
       }
-      #noise-perc-container {
+      #am-ring-container {
         margin-top: 1rem;
         max-width: 100%;
       }
-      #noise-perc-container canvas {
+      #am-ring-container canvas {
         display: block;
         max-width: 100%;
         height: auto;
@@ -160,9 +163,6 @@
       }
       .controls-panel input[type="range"] {
         width: min(360px, 100%);
-      }
-      .controls-row {
-        margin-top: 0.35rem;
       }
 
       /* Readable control layout shared by the p5 Editor learning copies. */
@@ -320,51 +320,55 @@
   </head>
   <body>
     <main>
-      <h1>Noise Percussion</h1>
+      <h1>Amplitude / Ring Modulation</h1>
       <p class="description">
-        Hits shaped by a triggered AD/AR envelope, with selectable source:
-        white noise or Perlin sampled loop. Adjust hit rate, AD vs AR behavior,
-        sequence pattern, attack time, and attack curve (linear, exponential,
-        or logarithmic) to hear and see how onset shape changes the percussion
-        character.
+        Start with a carrier (sine, saw, square, or noise) and use another wave
+        to modulate amplitude. Low rates give tremolo; fast modulation
+        approaches ring modulation and new timbres. Perlin mode uses a sampled
+        chunk that is looped (function-generator style).
       </p>
 
-      
-      <div id="noise-perc-container"></div>
+
+      <div id="am-ring-container"></div>
+
       <details class="guide">
         <summary>Controls guide (what each control does)</summary>
         <dl>
           <dt><code>Start</code> / <code>Stop</code></dt>
           <dd>
-            Starts/stops the percussion engine. Browsers require a user gesture
-            before audio will play.
+            Starts/stops the audio graph. Browsers require a user gesture before
+            audio will play.
           </dd>
 
-          <dt><code>Source</code></dt>
-          <dd>Chooses the raw sound: noise or a looped Perlin-like buffer.</dd>
+          <dt><code>Carrier</code></dt>
+          <dd>The sound being amplitude-modulated (what you “hear”).</dd>
 
-          <dt><code>Hit rate</code> (Hz)</dt>
-          <dd>How often hits are triggered.</dd>
+          <dt><code>Mod wave</code></dt>
+          <dd>
+            The waveform used to modulate the carrier amplitude. Slow modulation
+            sounds like tremolo; fast modulation approaches ring modulation.
+          </dd>
 
-          <dt><code>Sequence</code></dt>
-          <dd>A simple step pattern that gates which hits fire.</dd>
+          <dt><code>Rate</code> (Hz)</dt>
+          <dd>Modulation rate: slow for tremolo, fast for ring-mod-like tones.</dd>
 
-          <dt><code>Envelope</code></dt>
-          <dd>Choose whether the hit uses AD or AR behavior.</dd>
+          <dt><code>Depth</code></dt>
+          <dd>How strong the modulation is (0 = none, 1 = full depth).</dd>
 
-          <dt><code>Attack</code> (ms)</dt>
-          <dd>How quickly the hit ramps up from silence.</dd>
-
-          <dt><code>Attack curve</code></dt>
-          <dd>Changes the shape of the onset (linear vs curved).</dd>
-
-          <dt><code>Decay/Release</code> (ms)</dt>
-          <dd>How quickly the hit fades out after the attack.</dd>
+          <dt><code>fast mod (ring-mod-ish)</code></dt>
+          <dd>
+            Switches the modulator from slow tremolo rates into fast
+            modulation, generating sidebands and harsher timbres.
+          </dd>
         </dl>
       </details>
       <p class="description">
-        Want to return to modulation with tonal carriers? Open
-        <a href="../am-ring-mod/index.html">AM / Ring Mod sketch</a>.
+        Top: carrier waveform preview. Middle: envelope over time. Bottom:
+        output waveform after envelope/modulation is applied.
+      </p>
+      <p class="description">
+        Looking for percussion behavior demos? Open
+        <a href="../2_noise-percussion/index.html">Noise Percussion sketch</a>.
       </p>
     </main>
   </body>
